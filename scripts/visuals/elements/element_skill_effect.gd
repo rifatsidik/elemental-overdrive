@@ -139,12 +139,12 @@ func _build_flame_shape(base: Vector2, direction: Vector2, length: float, half_w
 	var segments := 12
 	for i in range(segments + 1):
 		var t := float(i) / float(segments)
-		var shape_width := half_width * pow(1.0 - t, 0.78) * (0.82 + 0.18 * sin(t * PI * 3.0 + phase))
+		var shape_width := maxf(0.5, half_width * pow(1.0 - t, 0.78) * (0.82 + 0.18 * sin(t * PI * 3.0 + phase)))
 		var sway := sin(t * 7.0 + phase + age * 18.0) * half_width * 0.2 * t
 		points.append(base + direction * length * t + normal * (sway + shape_width))
 	for i in range(segments, -1, -1):
 		var t := float(i) / float(segments)
-		var shape_width := half_width * pow(1.0 - t, 0.78) * (0.82 + 0.18 * sin(t * PI * 3.0 + phase))
+		var shape_width := maxf(0.5, half_width * pow(1.0 - t, 0.78) * (0.82 + 0.18 * sin(t * PI * 3.0 + phase)))
 		var sway := sin(t * 7.0 + phase + age * 18.0) * half_width * 0.2 * t
 		points.append(base + direction * length * t + normal * (sway - shape_width))
 	return points
