@@ -56,7 +56,7 @@ func execute_ability(
 			chain_origin,
 			candidates,
 			excluded,
-			chain_limit,
+			maxi(0, chain_limit - targets.size()),
 			maxf(0.0, float(ability.get("chain_range", 360.0)))
 		)
 		for target in chained:
@@ -115,6 +115,7 @@ func execute_ability(
 			impulse = target.apply_impulse(direction, impulse_magnitude)
 		var hit := {
 			"target_id": target.combatant_id,
+			"position": target.global_position,
 			"damage": actual_damage,
 			"health_remaining": target.current_health,
 			"status_id": status_id if status_applied else &"",

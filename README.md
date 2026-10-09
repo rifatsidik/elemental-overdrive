@@ -15,6 +15,7 @@ This repository builds the **engine lab and reusable engine systems**, not a fin
 - **Combatant & Status Controller** — health, defeat state, timed statuses, periodic burn damage, and impulse adaptation.
 - **Chain Reaction Manager** — nearest-first, range-limited, duplicate-safe target selection.
 - **Combat World Adapter** — applies simulation results to caller-supplied collision candidates.
+- **Element VFX Router** — routes combat hit results to lightning, wind, fire, and water renderers without mutating simulation state.
 - **Energy Renderer & Particles** — procedural lightning and bounded energy/particle effects.
 - **Performance Director** — Low / Balanced / High visual budgets and runtime telemetry.
 - **Engine Lab** — isolated visual demonstrations and controls.
