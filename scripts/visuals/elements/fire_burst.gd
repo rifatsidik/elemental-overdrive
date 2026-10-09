@@ -21,9 +21,9 @@ func configure(new_strength: float, seed_value: int, layers: int, color: Color =
 	_flame_lengths.clear()
 	_ember_velocities.clear()
 	_ember_sizes.clear()
-	for i in range(9 + layer_budget * 5):
-		_flame_angles.append(_rng.randf_range(-PI, PI))
-		_flame_lengths.append(_rng.randf_range(34.0, 82.0))
+	for i in range(7 + layer_budget * 3):
+		_flame_angles.append(_rng.randf_range(-1.12, 1.12))
+		_flame_lengths.append(_rng.randf_range(42.0, 88.0))
 	for i in range(10 + layer_budget * 5):
 		var angle := _rng.randf_range(0.0, TAU)
 		var speed := _rng.randf_range(55.0, 230.0)
@@ -48,32 +48,38 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var progress := clampf(age / lifetime, 0.0, 1.0)
 	var fade := 1.0 - progress
-	var flare := 1.0 - smoothstep(0.0, 0.22, age)
-	# Hot core, orange bloom, and two rapidly expanding heat fronts.
-	draw_circle(Vector2.ZERO, (18.0 + 18.0 * flare) * strength, Color(1.0, 0.12, 0.015, fade * 0.18))
-	draw_circle(Vector2.ZERO, (11.0 + 10.0 * flare) * strength, Color(1.0, 0.3, 0.025, fade * 0.32))
-	draw_circle(Vector2.ZERO, (4.0 + 5.0 * flare) * strength, Color(1.0, 0.9, 0.55, fade * 0.92))
-	for i in range(layer_budget):
-		var ring_progress := clampf(age / (0.24 + float(i) * 0.09), 0.0, 1.0)
-		var radius := (8.0 + ring_progress * (70.0 + float(i) * 22.0)) * strength
-		var alpha := (1.0 - ring_progress) * (0.65 / float(i + 1))
-		draw_arc(Vector2.ZERO, radius, float(i) * 0.9 + age * 2.0, float(i) * 0.9 + age * 2.0 + PI * 1.72, 40, Color(1.0, 0.2 + float(i) * 0.12, 0.025, alpha), maxf(1.0, 4.2 - float(i)), true)
+	var flare := 1.0 - smoothstep(0.0, 0.2, age)
+	draw_circle(Vector2(0.0, 9.0 * strength), (20.0 + 15.0 * flare) * strength, Color(1.0, 0.1, 0.008, fade * 0.2))
+	draw_circle(Vector2(0.0, 8.0 * strength), (11.0 + 8.0 * flare) * strength, Color(1.0, 0.34, 0.018, fade * 0.42))
 	for i in range(_flame_angles.size()):
-		var angle: float = _flame_angles[i]
-		var wobble := sin(age * 25.0 + float(i) * 1.7) * 0.17
-		var direction := Vector2(cos(angle + wobble), sin(angle + wobble) - 0.82).normalized()
-		var length: float = _flame_lengths[i] * strength * fade
-		var base := direction * (5.0 * strength)
-		var tip := direction * length + Vector2(0.0, -length * 0.3)
-		var width := maxf(1.0, (5.6 - progress * 4.0) * strength)
-		draw_line(base, tip, Color(tint.r, tint.g * 0.35, tint.b * 0.15, fade * 0.25), width * 3.0, true)
-		draw_line(base, tip, Color(1.0, 0.24 + 0.18 * sin(age * 32.0 + float(i)), 0.025, fade * 0.76), width * 1.35, true)
-		draw_line(base, base.lerp(tip, 0.64), Color(1.0, 0.9, 0.55, fade * 0.92), maxf(1.0, width * 0.36), true)
+		var angle: float = _flame_angles[i] + sin(age * 18.0 + float(i) * 1.8) * 0.16
+		var direction := Vector2(sin(angle), -cos(angle)).normalized()
+		var length: float = _flame_lengths[i] * strength * (1.0 - progress * 0.28)
+		var base := Vector2(sin(float(i) * 1.71 + age * 3.0) * 10.0 * strength, 10.0 * strength)
+		var width := (8.0 + 5.0 * sin(float(i) * 2.3 + age * 11.0)) * strength
+		var phase := float(i) * 1.37
+		draw_colored_polygon(_build_flame_shape(base, direction, length, width, phase), Color(1.0, 0.1, 0.006, fade * 0.86))
+		draw_colored_polygon(_build_flame_shape(base + direction * length * 0.07, direction, length * 0.78, width * 0.62, phase + 0.8), Color(1.0, 0.36, 0.02, fade * 0.94))
+		draw_colored_polygon(_build_flame_shape(base + direction * length * 0.14, direction, length * 0.55, width * 0.28, phase + 1.6), Color(1.0, 0.88, 0.32, fade * 0.95))
 	for i in range(_ember_velocities.size()):
 		var velocity: Vector2 = _ember_velocities[i]
-		var position := velocity * age + Vector2(0.0, 95.0 * age * age)
+		var position := velocity * age * 0.55 + Vector2(0.0, -38.0 * age + 115.0 * age * age)
 		var radius: float = _ember_sizes[i] * strength * fade
-		var tail := position - velocity.normalized() * (8.0 + velocity.length() * 0.025)
-		draw_line(tail, position, Color(1.0, 0.2, 0.025, fade * 0.48), maxf(1.0, radius * 1.8), true)
-		draw_circle(position, radius * 1.9, Color(1.0, 0.24, 0.015, fade * 0.18))
-		draw_circle(position, radius, Color(1.0, 0.88, 0.48, fade * 0.92))
+		draw_circle(position, radius * 1.7, Color(1.0, 0.18, 0.008, fade * 0.2))
+		draw_circle(position, radius, Color(1.0, 0.86, 0.36, fade * 0.92))
+
+func _build_flame_shape(base: Vector2, direction: Vector2, length: float, half_width: float, phase: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var normal := Vector2(-direction.y, direction.x)
+	var segments := 12
+	for i in range(segments + 1):
+		var u := float(i) / float(segments)
+		var shape_width := half_width * pow(1.0 - u, 0.78) * (0.82 + 0.18 * sin(u * PI * 3.0 + phase))
+		var sway := sin(u * 7.0 + phase + age * 18.0) * half_width * 0.2 * u
+		points.append(base + direction * length * u + normal * (sway + shape_width))
+	for i in range(segments, -1, -1):
+		var u := float(i) / float(segments)
+		var shape_width := half_width * pow(1.0 - u, 0.78) * (0.82 + 0.18 * sin(u * PI * 3.0 + phase))
+		var sway := sin(u * 7.0 + phase + age * 18.0) * half_width * 0.2 * u
+		points.append(base + direction * length * u + normal * (sway - shape_width))
+	return points
