@@ -13,8 +13,8 @@
 2. Confirm a short-lived lightning shape and expanding rings appear at the selected point.
 3. Press `1`, then trigger an effect; the effect should use the smallest branch/layer budget.
 4. Press `2` and trigger an effect; the Balanced budget should be used.
-5. Press `3` and trigger an effect; the High budget should be used.
-6. Confirm effects expire and the active effect count falls back toward zero.
+6. Press `3` and trigger an effect; the High budget should be used.
+7. Confirm effects expire and the active effect count falls back toward zero.
 
 ## Regression checks
 
