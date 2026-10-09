@@ -89,6 +89,7 @@ func _run_tests() -> void:
 	combatant.combatant_id = &"dummy"
 	combatant.position = Vector2(24.0, 0.0)
 	root.add_child(combatant)
+	var router_children_before_hit := router.get_child_count()
 	var world_result: Dictionary = adapter.execute_ability(
 		{
 			"ability_id": &"test_fire",
@@ -107,7 +108,7 @@ func _run_tests() -> void:
 	assert(int(world_result.get("hit_count", 0)) == 1)
 	assert(combatant.current_health < combatant.max_health)
 	assert(combatant.has_status(&"burning"))
-	assert(router.get_child_count() > 0)
+	assert(router.get_child_count() > router_children_before_hit)
 
 	print("OVERDRIVE elemental combat smoke tests: PASS")
 	root.remove_child(combatant)
