@@ -5,11 +5,22 @@ const LIGHTNING_SCRIPT = preload("res://scripts/visuals/energy_burst.gd")
 const WIND_SCRIPT = preload("res://scripts/visuals/elements/wind_burst.gd")
 const FIRE_SCRIPT = preload("res://scripts/visuals/elements/fire_burst.gd")
 const WATER_SCRIPT = preload("res://scripts/visuals/elements/water_burst.gd")
+const PROJECTILE_SCRIPT = preload("res://scripts/visuals/elements/element_projectile.gd")
+const SKILL_SCRIPT = preload("res://scripts/visuals/elements/element_skill_effect.gd")
 
 @export_range(1, 64, 1) var max_active_effects: int = 24
 var branch_budget: int = 4
 var layer_budget: int = 2
 var _sequence: int = 0
+
+const SKILL_ELEMENT := {
+	&"fire_tornado": &"fire",
+	&"fire_burst": &"fire",
+	&"water_jet_burst": &"water",
+	&"water_torrent": &"water",
+	&"wind_cyclone": &"wind",
+	&"wind_blade_storm": &"wind"
+}
 
 func bind_adapter(adapter: Node) -> bool:
 	if not is_instance_valid(adapter) or not adapter.has_signal("ability_resolved"):
@@ -24,7 +35,18 @@ func set_quality_budgets(branches: int, layers: int, active_limit: int) -> void:
 	layer_budget = clampi(layers, 1, 3)
 	max_active_effects = clampi(active_limit, 1, 64)
 
-## Presentation-only consumer. Effects never change combat outcomes.
+## Explicit skill presentation API for future abilities. Does not alter combat simulation.
+func play_skill(skill_id: StringName, world_position: Vector2, scale: float = 1.0) -> bool:
+	if not SKILL_ELEMENT.has(skill_id) or get_child_count() >= max_active_effects:
+		return false
+	_sequence += 1
+	var effect = SKILL_SCRIPT.new()
+	effect.name = "SkillVFX_%s_%03d" % [String(skill_id), _sequence]
+	effect.position = to_local(world_position)
+	add_child(effect)
+	effect.configure(skill_id, int((Time.get_ticks_usec() + _sequence * 104729) % 2147483647), scale, layer_budget)
+	return true
+
 func present_result(result: Dictionary) -> void:
 	if not bool(result.get("accepted", false)):
 		return
@@ -46,8 +68,28 @@ func present_result(result: Dictionary) -> void:
 		if reaction_id == &"steam_burst":
 			effect_element = &"water"
 			color = Color(0.78, 0.92, 1.0, 1.0)
-		var size_multiplier := _element_size_multiplier(effect_element)
-		_spawn_effect(effect_element, target_local, source_local - target_local, _strength_from_damage(float(result.get("damage", 10.0))) * size_multiplier, color)
+		var strength := _strength_from_damage(float(result.get("damage", 10.0))) * _element_size_multiplier(effect_element)
+		if effect_element == &"fire" or effect_element == &"water" or effect_element == &"wind":
+			if _spawn_projectile(effect_element, source_local, target_local, strength, color):
+				continue
+		_spawn_effect(effect_element, target_local, source_local - target_local, strength, color)
+
+func _spawn_projectile(element_id: StringName, source: Vector2, target: Vector2, strength: float, color: Color) -> bool:
+	if source.distance_to(target) < 20.0 or get_child_count() >= max_active_effects:
+		return false
+	_sequence += 1
+	var projectile = PROJECTILE_SCRIPT.new()
+	projectile.name = "ProjectileVFX_%s_%03d" % [String(element_id), _sequence]
+	projectile.position = source
+	add_child(projectile)
+	projectile.arrived.connect(_on_projectile_arrived)
+	projectile.configure(element_id, target - source, strength, int((Time.get_ticks_usec() + _sequence * 7919) % 2147483647), layer_budget, color)
+	return true
+
+func _on_projectile_arrived(element_id: StringName, target: Vector2, source: Vector2, strength: float, color: Color) -> void:
+	if get_child_count() >= max_active_effects:
+		return
+	_spawn_effect(element_id, target, source - target, strength, color)
 
 func _spawn_effect(element_id: StringName, origin: Vector2, source_offset: Vector2, strength: float, color: Color) -> void:
 	_sequence += 1
@@ -89,7 +131,7 @@ func _element_size_multiplier(element_id: StringName) -> float:
 		&"fire":
 			return 1.65
 		&"water":
-			return 1.8
+			return 2.0
 		_:
 			return 1.0
 

@@ -33,6 +33,10 @@ Selects nearest candidates within a bounded radius and excludes already-hit/dupl
 
 Receives candidate targets from the game's raycast, overlap query, projectile collision, or other physics system. It filters invalid/defeated/duplicate/out-of-range combatants, asks the executor for the simulation result, applies damage/status/impulse, and emits hit/reaction signals for presentation. It never scans the entire scene to discover targets.
 
+### Element projectiles and skill presentation
+
+Fire, water, and wind have distinct travel silhouettes: a flame projectile, a pressurized liquid jet, and a sword-like wind crescent. The router sequences the travel animation before the visual impact, while combat hit detection and damage remain authoritative in the world adapter. A separate skill renderer provides reusable visual presets for fire tornado/burst, water jet burst/torrent, and wind cyclone/blade storm. These skill previews are presentation only; production abilities must separately define cast rules, collision queries, cooldowns, and simulation effects.
+
 ### Energy renderer and particle system
 
 Own procedural lightning, arcs, plasma ribbons, beams, shockwaves, sparks, debris, and trails. Geometry, particle counts, and line layers must be bounded and scalable.
@@ -56,7 +60,7 @@ Keep GL Compatibility as a conservative baseline. Evaluate renderer changes and 
 3. Combatant health/status and world adapter.
 4. Automated smoke tests in Godot 4.7.x.
 5. Collision-query integration and multi-hop chain graph with cycle guards.
-6. Element VFX router and procedural wind, fire, and water renderers consuming combat hit events.
+6. Element VFX router, distinct elemental projectile silhouettes, and reusable special-skill renderer presets.
 7. Android landscape profiling, allocation/latency checks, and Low/Balanced/High tuning.
 
 ## Definition of done

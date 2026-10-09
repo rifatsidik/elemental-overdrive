@@ -7,6 +7,8 @@ const RESOLVER_SCRIPT = preload("res://scripts/elements/interaction_resolver.gd"
 const ELEMENT_SCRIPT = preload("res://scripts/elements/element_definition.gd")
 const VFX_ROUTER_SCRIPT = preload("res://scripts/visuals/element_vfx_router.gd")
 const LIGHTNING_SCRIPT = preload("res://scripts/visuals/energy_burst.gd")
+const PROJECTILE_SCRIPT = preload("res://scripts/visuals/elements/element_projectile.gd")
+const SKILL_SCRIPT = preload("res://scripts/visuals/elements/element_skill_effect.gd")
 
 func _initialize() -> void:
 	call_deferred("_run_tests")
@@ -66,15 +68,28 @@ func _run_tests() -> void:
 	assert(lightning.start_point.is_equal_approx(source_offset))
 	lightning.free()
 
+	var projectile = PROJECTILE_SCRIPT.new()
+	projectile.configure(&"water", Vector2(420.0, -60.0), 1.2, 987, 3, Color(0.1, 0.6, 1.0, 1.0))
+	assert(projectile.element_id == &"water")
+	assert(projectile.travel_vector.is_equal_approx(Vector2(420.0, -60.0)))
+	projectile.free()
+	var skill = SKILL_SCRIPT.new()
+	skill.configure(&"fire_tornado", 1234, 1.0, 3)
+	assert(skill.lifetime > 1.0)
+	skill.free()
+
 	var adapter = WORLD_ADAPTER_SCRIPT.new()
 	root.add_child(adapter)
 	var router = VFX_ROUTER_SCRIPT.new()
 	root.add_child(router)
 	assert(router.bind_adapter(adapter))
+	assert(router.play_skill(&"fire_tornado", Vector2(200.0, 160.0)))
+	assert(not router.play_skill(&"unknown_skill", Vector2.ZERO))
 	var combatant = COMBATANT_SCRIPT.new()
 	combatant.combatant_id = &"dummy"
 	combatant.position = Vector2(24.0, 0.0)
 	root.add_child(combatant)
+	var router_children_before_hit := router.get_child_count()
 	var world_result: Dictionary = adapter.execute_ability(
 		{
 			"ability_id": &"test_fire",
@@ -93,7 +108,7 @@ func _run_tests() -> void:
 	assert(int(world_result.get("hit_count", 0)) == 1)
 	assert(combatant.current_health < combatant.max_health)
 	assert(combatant.has_status(&"burning"))
-	assert(router.get_child_count() > 0)
+	assert(router.get_child_count() > router_children_before_hit)
 
 	print("OVERDRIVE elemental combat smoke tests: PASS")
 	root.remove_child(combatant)
