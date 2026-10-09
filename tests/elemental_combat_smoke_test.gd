@@ -34,6 +34,11 @@ func _run_tests() -> void:
 	assert(bool(result.get("accepted", false)))
 	assert(is_finite(float(result.get("damage", -1.0))))
 	assert(result.get("target_ids", []).size() == 4)
+	var capped_ability: Dictionary = ability.duplicate(true)
+	capped_ability["ability_id"] = &"test_arc_capped"
+	capped_ability["max_targets"] = 2
+	var capped_result: Dictionary = executor.execute_ability(capped_ability, {"target_ids": ["a", "b", "c", "d"]})
+	assert(capped_result.get("target_ids", []).size() == 2)
 
 	var cooldown_result: Dictionary = executor.execute_ability(ability, {"caster_id": &"test_caster"})
 	assert(not bool(cooldown_result.get("accepted", true)))
