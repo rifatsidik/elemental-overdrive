@@ -44,7 +44,7 @@ func _register_default(
 	status_id: StringName,
 	status_duration: float,
 	max_chain_targets: int,
-	tags: Array
+	tags: Array[StringName]
 ) -> void:
 	var definition = ELEMENT_DEFINITION_SCRIPT.new()
 	definition.set("element_id", element_id)
