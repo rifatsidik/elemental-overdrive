@@ -89,7 +89,7 @@ func execute_ability(ability: Dictionary, context: Dictionary = {}) -> Dictionar
 	var damage_multiplier := float(definition.get("damage_scale"))
 	var impulse_multiplier := float(definition.get("impulse_scale"))
 	var max_targets := maxi(1, int(definition.get("max_chain_targets")))
-	var reaction: Dictionary = _interaction_resolver._no_reaction()
+	var reaction: Dictionary = _interaction_resolver.resolve(element_id, &"")
 
 	var secondary_id := StringName(context.get("secondary_element_id", &""))
 	if secondary_id != &"":
@@ -101,7 +101,7 @@ func execute_ability(ability: Dictionary, context: Dictionary = {}) -> Dictionar
 			if reaction_status != &"":
 				status_id = reaction_status
 				status_duration = maxf(status_duration, float(reaction.get("status_duration", 0.0)))
-			max_targets = mini(max_targets, maxi(1, int(reaction.get("max_chain_targets", 1))))
+			max_targets = maxi(1, int(reaction.get("max_chain_targets", 1)))
 
 	var requested_targets: Array = context.get("target_ids", [])
 	var resolved_targets: Array = []
