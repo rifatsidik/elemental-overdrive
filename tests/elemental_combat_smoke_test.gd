@@ -6,6 +6,7 @@ const COMBATANT_SCRIPT = preload("res://scripts/combat/combatant.gd")
 const RESOLVER_SCRIPT = preload("res://scripts/elements/interaction_resolver.gd")
 const ELEMENT_SCRIPT = preload("res://scripts/elements/element_definition.gd")
 const VFX_ROUTER_SCRIPT = preload("res://scripts/visuals/element_vfx_router.gd")
+const LIGHTNING_SCRIPT = preload("res://scripts/visuals/energy_burst.gd")
 
 func _initialize() -> void:
 	call_deferred("_run_tests")
@@ -59,6 +60,12 @@ func _run_tests() -> void:
 	element.element_id = &"test_element"
 	assert(element.to_payload().get("element_id") == &"test_element")
 
+	var lightning = LIGHTNING_SCRIPT.new()
+	var source_offset := Vector2(-340.0, -170.0)
+	lightning.configure(1.0, 7123, 4, 2, source_offset)
+	assert(lightning.start_point.is_equal_approx(source_offset))
+	lightning.free()
+
 	var adapter = WORLD_ADAPTER_SCRIPT.new()
 	root.add_child(adapter)
 	var router = VFX_ROUTER_SCRIPT.new()
@@ -80,6 +87,8 @@ func _run_tests() -> void:
 		[combatant]
 	)
 	assert(bool(world_result.get("accepted", false)))
+	assert(world_result.get("origin") is Vector2)
+	assert((world_result.get("origin") as Vector2).is_equal_approx(Vector2.ZERO))
 	assert(int(world_result.get("hit_count", 0)) == 1)
 	assert(combatant.current_health < combatant.max_health)
 	assert(combatant.has_status(&"burning"))
