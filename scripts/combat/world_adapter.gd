@@ -56,7 +56,7 @@ func execute_ability(
 			chain_origin,
 			candidates,
 			excluded,
-			chain_limit,
+			maxi(0, chain_limit - targets.size()),
 			maxf(0.0, float(ability.get("chain_range", 360.0)))
 		)
 		for target in chained:
