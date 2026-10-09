@@ -100,6 +100,7 @@ func execute_ability(ability: Dictionary, context: Dictionary = {}) -> Dictionar
 	var damage_multiplier := float(definition.get("damage_scale"))
 	var impulse_multiplier := float(definition.get("impulse_scale"))
 	var is_chain: bool = bool(ability.get("chain", false))
+	var has_explicit_target_cap: bool = ability.has("max_targets")
 	var max_targets := maxi(1, int(ability.get("max_targets", definition.get("max_chain_targets") if is_chain else 1)))
 	var reaction: Dictionary = _interaction_resolver.resolve(element_id, &"")
 
@@ -114,7 +115,8 @@ func execute_ability(ability: Dictionary, context: Dictionary = {}) -> Dictionar
 				status_id = reaction_status
 				status_duration = maxf(status_duration, float(reaction.get("status_duration", 0.0)))
 			if is_chain:
-				max_targets = clampi(int(reaction.get("max_chain_targets", max_targets)), 1, 32)
+				var reaction_budget := clampi(int(reaction.get("max_chain_targets", max_targets)), 1, 32)
+				max_targets = mini(max_targets, reaction_budget) if has_explicit_target_cap else reaction_budget
 
 	var requested_targets: Array = context.get("target_ids", [])
 	var resolved_targets: Array = []

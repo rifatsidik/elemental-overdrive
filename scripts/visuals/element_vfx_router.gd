@@ -35,7 +35,7 @@ func present_result(result: Dictionary) -> void:
 	for hit in hits:
 		if get_child_count() >= max_active_effects:
 			break
-		if not hit is Dictionary or not hit.get("position") is Vector2:
+		if not (hit is Dictionary) or not (hit.get("position") is Vector2):
 			continue
 		var origin: Vector2 = hit["position"]
 		var effect_element := element_id
