@@ -42,6 +42,10 @@ Use the returned `hits` array for feedback/telemetry and the `reaction_triggered
 - `soaked`, `charged`, `staggered`, and `steamed`: timed state markers in this iteration. Their additional behavior is intentionally deferred to explicit combat/world rules, not hidden in the renderer.
 - Reapplying a status refreshes its remaining duration to the greater of current/new duration.
 
+## Interactive integration lab
+
+Open `scenes/elemental_combat_lab.tscn` and run the current scene (F6). Controls and manual checks are documented in `docs/ELEMENTAL_COMBAT_LAB.md`. The lab uses synthetic target selection; production gameplay must supply candidates from its real physics-query/collision pipeline.
+
 ## Run smoke tests
 
 From a terminal with Godot 4.7.x installed, run the project headlessly with the test script, for example:
