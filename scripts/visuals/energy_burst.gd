@@ -1,8 +1,10 @@
 extends Node2D
 class_name EnergyBurst
 
-## Layered procedural lightning strike. Geometry stays bounded and is regenerated
-## only when configured; frame animation changes reveal, flicker, sparks and impact rings.
+## Layered procedural lightning strike with a bright core, animated filaments,
+## radial impact rings and a bounded secondary particle burst.
+
+const PARTICLE_SCRIPT = preload("res://scripts/visuals/energy_particles.gd")
 
 var strength: float = 1.0
 var seed_value: int = 1
@@ -16,7 +18,6 @@ var _paths: Array[PackedVector2Array] = []
 var _branch_starts: Array[float] = []
 var _spark_directions: Array[Vector2] = []
 var _rng := RandomNumberGenerator.new()
-var _screen_flash: float = 0.0
 
 const STRIKE_TIME: float = 0.095
 const HOLD_TIME: float = 0.16
@@ -31,6 +32,11 @@ func configure(new_strength: float, new_seed: int, branches: int, layers: int) -
     _rng.seed = seed_value
     age = 0.0
     _build_paths()
+
+    var sparks: Node2D = PARTICLE_SCRIPT.new()
+    sparks.name = "EnergyParticles"
+    add_child(sparks)
+    sparks.configure(seed_value ^ 0x5F3759DF, 12 + layer_budget * 12, strength)
     queue_redraw()
 
 func _ready() -> void:
@@ -68,8 +74,7 @@ func _build_paths() -> void:
         var side := -1.0 if i % 2 == 0 else 1.0
         var branch := PackedVector2Array()
         branch.append(source)
-        var length := _rng.randf_range(42.0, 132.0) * strength
-        var end := source + Vector2(side * length, _rng.randf_range(-34.0, 58.0) * strength)
+        var end := source + Vector2(side * _rng.randf_range(42.0, 132.0) * strength, _rng.randf_range(-34.0, 58.0) * strength)
         branch.append(source.lerp(end, 0.32) + Vector2(_rng.randf_range(-12.0, 12.0), _rng.randf_range(-18.0, 18.0)))
         branch.append(source.lerp(end, 0.70) + Vector2(_rng.randf_range(-14.0, 14.0), _rng.randf_range(-10.0, 10.0)))
         branch.append(end)
@@ -87,8 +92,7 @@ func _build_paths() -> void:
             _paths.append(fork)
             _branch_starts.append(float(source_index) / float(main.size() - 1))
 
-    var spark_count := 8 + layer_budget * 5
-    for i in range(spark_count):
+    for i in range(8 + layer_budget * 5):
         _spark_directions.append(Vector2.from_angle(_rng.randf_range(0.0, TAU)))
 
 func _draw() -> void:
@@ -100,7 +104,6 @@ func _draw() -> void:
     var pulse := 0.72 + 0.28 * absf(sin(age * 76.0 + float(seed_value % 31)))
     var radius := lerpf(8.0, 178.0, smoothstep(0.0, 1.0, progress)) * strength
 
-    # Hot impact core and layered radial bloom, designed to remain readable without HDR.
     draw_circle(Vector2.ZERO, (46.0 + 54.0 * impact) * strength, Color(0.04, 0.28, 1.0, 0.075 * fade))
     draw_circle(Vector2.ZERO, (27.0 + 34.0 * impact) * strength, Color(0.02, 0.76, 1.0, 0.13 * fade))
     draw_circle(Vector2.ZERO, (13.0 + 11.0 * impact) * strength, Color(0.52, 0.98, 1.0, 0.23 * fade))
@@ -112,7 +115,6 @@ func _draw() -> void:
         var ring_color := Color(0.12, 0.58, 1.0, ring_alpha) if ring_index % 2 == 0 else Color(0.1, 1.0, 0.92, ring_alpha * 0.72)
         draw_arc(Vector2.ZERO, ring_radius, age * 0.8, TAU + age * 0.8, 64, ring_color, maxf(1.0, 4.5 - float(ring_index)), true)
 
-    # Brief radial shock filaments.
     if age < 0.22:
         for i in range(mini(_spark_directions.size(), 8 + layer_budget * 4)):
             var dir := _spark_directions[i]
@@ -147,7 +149,6 @@ func _draw() -> void:
             var flicker := 0.72 + 0.28 * absf(sin(age * 97.0 + float(path_index * 17)))
             var hot := fade * flicker
 
-            # Broad blue aura -> cyan plasma -> white-hot filament.
             draw_line(aa, bb, Color(0.015, 0.12, 1.0, 0.12 * hot), 28.0 * scale * strength, true)
             draw_line(aa, bb, Color(0.0, 0.52, 1.0, 0.20 * hot), 18.0 * scale * strength, true)
             draw_line(aa, bb, Color(0.0, 1.0, 0.96, 0.34 * hot), 10.0 * scale * strength, true)
@@ -155,13 +156,11 @@ func _draw() -> void:
                 draw_line(aa, bb, Color(0.70, 1.0, 1.0, 0.72 * hot), 4.6 * scale * strength, true)
             draw_line(aa, bb, Color(1.0, 1.0, 1.0, hot), 1.8 * scale * strength, true)
 
-            # Tiny side-arcs flicker around the active conductor.
             if layer_budget >= 3 and segment_index % 3 == 0 and age < 0.30:
                 var mid := aa.lerp(bb, 0.58)
                 var tangent := (bb - aa).orthogonal().normalized()
-                var tip := mid + tangent * _rngless_arc(path_index, segment_index) * strength
+                var tip := mid + tangent * _arc_offset(path_index, segment_index) * strength
                 draw_line(mid, tip, Color(0.15, 0.88, 1.0, hot * 0.8), 1.5, true)
 
-func _rngless_arc(path_index: int, segment_index: int) -> float:
-    var value := sin(float(seed_value % 997) * 0.071 + float(path_index * 19 + segment_index * 37) * 1.713)
-    return value * 13.0
+func _arc_offset(path_index: int, segment_index: int) -> float:
+    return sin(float(seed_value % 997) * 0.071 + float(path_index * 19 + segment_index * 37) * 1.713) * 13.0
