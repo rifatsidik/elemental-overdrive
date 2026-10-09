@@ -49,9 +49,9 @@ func configure(new_skill_id: StringName, new_seed: int, scale: float = 1.0, laye
 	queue_redraw()
 
 func _ready() -> void:
-	var additive := CanvasItemMaterial.new()
-	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	material = additive
+	var skill_material := CanvasItemMaterial.new()
+	skill_material.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX if String(skill_id).begins_with("water_") else CanvasItemMaterial.BLEND_MODE_ADD
+	material = skill_material
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -121,30 +121,93 @@ func _draw_fire_burst(progress: float, fade: float) -> void:
 		draw_circle(pos, r, Color(1.0, 0.85, 0.46, fade * 0.95))
 
 func _draw_water_burst(progress: float, fade: float) -> void:
-	var radius := (12.0 + progress * 112.0) * strength
-	draw_circle(Vector2.ZERO, radius * 0.42, Color(0.02, 0.42, 1.0, fade * 0.2))
-	for i in range(4 + layer_budget):
-		var ring := radius * (0.4 + float(i) * 0.14)
-		draw_arc(Vector2.ZERO, ring, age * (3.5 + float(i) * 0.7), age * (3.5 + float(i) * 0.7) + PI * 1.45, 48, Color(tint.r, tint.g, tint.b, fade * (0.8 / float(i + 1))), maxf(1.0, 4.5 - float(i) * 0.5), true)
+	# A pressurized water sheet that tears into curved fingers and falls as droplets.
+	var expansion := smoothstep(0.0, 0.62, progress)
+	var collapse := smoothstep(0.55, 1.0, progress)
+	var width := (26.0 + 92.0 * expansion) * strength
+	var height := (35.0 + 58.0 * (1.0 - collapse)) * strength
+	var sheet := PackedVector2Array()
+	for i in range(25):
+		var u := float(i) / 24.0
+		var x := lerpf(-width, width, u)
+		var crest := pow(maxf(0.0, sin(PI * u)), 0.58)
+		var wobble := sin(u * 24.0 + age * 21.0) * 3.2 * strength
+		sheet.append(Vector2(x, -crest * height + wobble))
+	for i in range(24, -1, -1):
+		var u := float(i) / 24.0
+		sheet.append(Vector2(lerpf(-width, width, u), 8.0 + sin(u * TAU * 2.0 - age * 8.0) * 1.8 * strength))
+	draw_colored_polygon(sheet, Color(0.02, 0.3, 0.67, fade * 0.82))
+	var crest_line := PackedVector2Array()
+	for i in range(2, 23):
+		crest_line.append(sheet[i] + Vector2(0.0, 2.0 * strength))
+	draw_polyline(crest_line, Color(0.48, 0.85, 1.0, fade * 0.9), 2.0 * strength, true)
+	# Spray fingers have independent phases, lengths and curved tips.
+	for i in range(5 + layer_budget * 2):
+		var u := float(i) / float(4 + layer_budget * 2)
+		var side := lerpf(-1.0, 1.0, u)
+		var base := Vector2(side * width * 0.7, 1.0)
+		var h := (38.0 + 30.0 * sin(age * 8.0 + float(i) * 1.7)) * strength
+		var control := base + Vector2(side * h * 0.24, -h)
+		var tip := base + Vector2(side * h * 0.58 + sin(age * 13.0 + float(i)) * 4.0, -h * 0.28)
+		var curve := PackedVector2Array()
+		for step in range(13):
+			var t := float(step) / 12.0
+			var q := 1.0 - t
+			curve.append(base * q * q + control * 2.0 * q * t + tip * t * t)
+		draw_polyline(curve, Color(0.02, 0.47, 0.78, fade * 0.92), 4.0 * strength, true)
+		draw_polyline(curve, Color(0.72, 0.95, 1.0, fade * 0.86), 1.2 * strength, true)
+	# Outward droplets arc down under gravity; they are not uniform radial rays.
 	for particle in _particles:
 		var angle: float = float(particle["angle"])
+		var speed: float = float(particle["speed"]) * 0.85
 		var dir := Vector2.from_angle(angle)
-		var distance: float = float(particle["speed"]) * age
-		var pos := dir * distance + Vector2(0.0, 95.0 * age * age)
-		var r: float = float(particle["radius"]) * fade
-		draw_line(pos - dir * r * 5.0, pos, Color(0.1, 0.55, 1.0, fade * 0.58), r * 1.4, true)
-		draw_circle(pos, r, Color(0.8, 0.98, 1.0, fade * 0.92))
+		var pos := dir * speed * age + Vector2(0.0, 210.0 * age * age)
+		var r: float = float(particle["radius"]) * 0.72 * fade
+		draw_circle(pos, r, Color(0.22, 0.65, 0.9, fade * 0.9))
+		draw_circle(pos - Vector2(r * 0.2, r * 0.3), r * 0.3, Color(0.9, 0.99, 1.0, fade * 0.8))
+	# A flattened expanding ripple reads as a surface disturbance.
+	var ripple_points := PackedVector2Array()
+	var rx := (18.0 + progress * 72.0) * strength
+	var ry := (4.0 + progress * 13.0) * strength
+	for i in range(33):
+		var a := PI * float(i) / 32.0
+		ripple_points.append(Vector2(cos(a) * rx, 13.0 + sin(a) * ry))
+	draw_polyline(ripple_points, Color(0.3, 0.7, 0.94, fade * 0.7), 2.0 * strength, true)
 
 func _draw_torrent(progress: float, fade: float) -> void:
-	for i in range(5 + layer_budget * 2):
-		var phase := age * 12.0 + float(i) * TAU / float(5 + layer_budget * 2)
-		var radius := (30.0 + float(i % 4) * 18.0) * strength
-		var center := Vector2(cos(phase) * radius, sin(phase * 0.7) * 38.0 * strength)
-		var end := center + Vector2(cos(phase + 0.9), -1.4).normalized() * (65.0 + 25.0 * sin(phase)) * strength
-		draw_line(center, end, Color(0.0, 0.28, 1.0, fade * 0.26), 12.0 * strength, true)
-		draw_line(center, end, Color(0.12, 0.72, 1.0, fade * 0.75), 5.0 * strength, true)
-		draw_line(center, end, Color(0.9, 1.0, 1.0, fade * 0.9), 1.4 * strength, true)
-	draw_arc(Vector2.ZERO, (20.0 + progress * 58.0) * strength, age * 5.0, age * 5.0 + TAU * 0.86, 52, Color(tint.r, tint.g, tint.b, fade * 0.8), 3.0 * strength, true)
+	# A thick, continuously twisting column of water built from tapered fluid ribbons.
+	var height := 185.0 * strength
+	var width := 34.0 * strength
+	for strand in range(3 + layer_budget):
+		var phase := age * (5.0 + float(strand) * 0.7) + float(strand) * TAU / float(3 + layer_budget)
+		var points := PackedVector2Array()
+		var highlight := PackedVector2Array()
+		var segments := 22
+		for i in range(segments + 1):
+			var u := float(i) / float(segments)
+			var y := lerpf(height * 0.48, -height * 0.52, u)
+			var envelope := 0.35 + 0.65 * sin(PI * u)
+			var x := sin(u * TAU * 1.5 + phase) * width * envelope
+			x += sin(u * 15.0 - age * 19.0 + float(strand)) * 3.0 * strength
+			points.append(Vector2(x, y))
+			highlight.append(Vector2(x + 2.5 * strength, y))
+		var ribbon_width := (7.0 + 5.0 * sin(phase)) * strength
+		draw_polyline(points, Color(0.015, 0.24, 0.6, fade * 0.76), ribbon_width * 1.9, true)
+		draw_polyline(points, Color(0.02, 0.48, 0.79, fade * 0.92), ribbon_width, true)
+		draw_polyline(highlight, Color(0.56, 0.86, 1.0, fade * 0.84), maxf(1.0, ribbon_width * 0.22), true)
+	# Water breaks off at the base in uneven beads.
+	for i in range(8 + layer_budget * 3):
+		var angle := age * 3.2 + float(i) * TAU / float(8 + layer_budget * 3)
+		var speed := (32.0 + float(i % 4) * 11.0) * strength
+		var pos := Vector2(cos(angle) * speed * progress, 24.0 + sin(angle) * speed * 0.18 + 25.0 * progress * progress)
+		var r := (1.8 + float(i % 3) * 0.7) * strength * fade
+		draw_circle(pos, r, Color(0.5, 0.82, 0.98, fade * 0.88))
+	# Pressure ring is flattened to the floor plane.
+	var ring := PackedVector2Array()
+	for i in range(33):
+		var a := PI * float(i) / 32.0
+		ring.append(Vector2(cos(a) * (20.0 + progress * 54.0) * strength, 20.0 + sin(a) * (5.0 + progress * 10.0) * strength))
+	draw_polyline(ring, Color(tint.r, tint.g, tint.b, fade * 0.76), 2.4 * strength, true)
 
 func _draw_blade_storm(progress: float, fade: float) -> void:
 	var count := 4 + layer_budget * 2
