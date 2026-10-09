@@ -30,9 +30,9 @@ func configure(new_strength: float, seed_value: int, layers: int, color: Color =
 		var speed := _rng.randf_range(70.0, 260.0)
 		_droplet_velocities.append(Vector2.from_angle(angle) * speed + Vector2(_rng.randf_range(-45.0, 45.0), -_rng.randf_range(15.0, 100.0)))
 		_droplet_sizes.append(_rng.randf_range(1.5, 4.6))
-	for i in range(5 + layer_budget * 2):
+	for i in range(3 + layer_budget):
 		_jet_angles.append(_rng.randf_range(-PI * 0.94, -PI * 0.06))
-		_jet_heights.append(_rng.randf_range(40.0, 105.0))
+		_jet_heights.append(_rng.randf_range(24.0, 58.0))
 		_jet_sides.append(_rng.randf_range(0.82, 1.22))
 	age = 0.0
 	queue_redraw()
@@ -76,15 +76,22 @@ func _draw() -> void:
 	var sheet_height := (25.0 + 49.0 * burst) * strength * (1.0 - collapse * 0.42)
 	var sheet := PackedVector2Array()
 	var samples := 22
+	# Keep the upper contour above the lower contour at every sample.
+	# This prevents the polygon from folding across itself during turbulence.
 	for i in range(samples + 1):
 		var u := float(i) / float(samples)
 		var x := lerpf(-half_width, half_width, u)
-		var arch := pow(maxf(0.0, sin(PI * u)), 0.62)
-		var turbulence := (sin(u * 24.0 - age * 22.0) * 3.0 + sin(u * 41.0 + age * 17.0) * 1.2) * strength
-		sheet.append(Vector2(x, 9.0 - arch * sheet_height + turbulence))
+		var edge_fade := sin(PI * u)
+		var arch := pow(maxf(0.0, edge_fade), 0.62)
+		var bottom_y := 13.0 + sin(u * TAU * 3.0 + age * 8.0) * 1.6 * strength
+		var turbulence := (sin(u * 24.0 - age * 22.0) * 3.0 + sin(u * 41.0 + age * 17.0) * 1.2) * strength * edge_fade
+		var top_y := minf(9.0 - arch * sheet_height + turbulence, bottom_y - 3.0)
+		sheet.append(Vector2(x, top_y))
 	for i in range(samples, -1, -1):
 		var u := float(i) / float(samples)
-		sheet.append(Vector2(lerpf(-half_width, half_width, u), 13.0 + sin(u * TAU * 3.0 + age * 8.0) * 1.6 * strength))
+		var x := lerpf(-half_width, half_width, u)
+		var bottom_y := 13.0 + sin(u * TAU * 3.0 + age * 8.0) * 1.6 * strength
+		sheet.append(Vector2(x, bottom_y))
 	draw_colored_polygon(sheet, Color(0.02, 0.36, 0.72, fade * 0.78))
 	var sheet_glint := PackedVector2Array()
 	for i in range(2, samples - 2):
@@ -94,14 +101,14 @@ func _draw() -> void:
 	if sheet_glint.size() > 1:
 		draw_polyline(sheet_glint, Color(0.56, 0.9, 1.0, fade * 0.86), 1.6 * strength, true)
 
-	# Curled water fingers peel off the sheet, each with a broad body and a narrow highlight.
+	# A few short, thick curls add splash shape without long grass-like spikes.
 	for i in range(_jet_angles.size()):
 		var angle: float = _jet_angles[i]
 		var height: float = _jet_heights[i] * strength * (1.0 - collapse * 0.48)
 		var side := Vector2(cos(angle), sin(angle))
 		var base := Vector2(side.x * half_width * 0.62, 7.0)
-		var control := base + Vector2(side.x * height * 0.3, -height * 0.95)
-		var tip := base + Vector2(side.x * height * 0.62, -height * 0.22)
+		var control := base + Vector2(side.x * height * 0.22, -height * 0.76)
+		var tip := base + Vector2(side.x * height * 0.36, -height * 0.28)
 		tip.x *= _jet_sides[i]
 		var curve := PackedVector2Array()
 		for step in range(15):
@@ -111,9 +118,13 @@ func _draw() -> void:
 			point.x += sin(t * PI * 2.0 + age * 12.0 + float(i)) * 2.2 * strength
 			curve.append(point)
 		var jet_alpha := fade * (1.0 - float(i % 3) * 0.13)
-		draw_polyline(curve, Color(0.015, 0.2, 0.52, jet_alpha * 0.9), 6.0 * strength, true)
-		draw_polyline(curve, Color(0.03, 0.52, 0.84, jet_alpha), 3.0 * strength, true)
-		draw_polyline(curve, Color(0.68, 0.94, 1.0, jet_alpha * 0.9), 1.0 * strength, true)
+		draw_polyline(curve, Color(0.015, 0.2, 0.52, jet_alpha * 0.9), 9.0 * strength, true)
+		draw_polyline(curve, Color(0.03, 0.52, 0.84, jet_alpha), 5.2 * strength, true)
+		var short_glint := PackedVector2Array()
+		for glint_index in range(3, 7):
+			short_glint.append(curve[glint_index])
+		draw_polyline(short_glint, Color(0.68, 0.94, 1.0, jet_alpha * 0.8), 1.2 * strength, true)
+		draw_circle(tip, 2.8 * strength, Color(0.48, 0.82, 0.98, jet_alpha))
 
 	# Unevenly timed ripples spread across the surface instead of concentric sci-fi rings.
 	for i in range(layer_budget + 1):
