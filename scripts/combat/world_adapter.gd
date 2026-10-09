@@ -66,6 +66,7 @@ func execute_ability(
 	var valid_targets: Array[OverdriveCombatant] = []
 	var target_ids: Array[String] = []
 	var seen_ids: Dictionary = {}
+	var seen_combatant_ids: Dictionary = {}
 	for target in candidate_targets:
 		if not is_instance_valid(target) or not target is OverdriveCombatant:
 			continue
@@ -73,11 +74,13 @@ func execute_ability(
 		if combatant.is_defeated:
 			continue
 		var instance_id := combatant.get_instance_id()
-		if seen_ids.has(instance_id):
+		var stable_id := String(combatant.combatant_id)
+		if seen_ids.has(instance_id) or seen_combatant_ids.has(stable_id):
 			continue
 		if max_range > 0.0 and origin.distance_to(combatant.global_position) > max_range:
 			continue
 		seen_ids[instance_id] = true
+		seen_combatant_ids[stable_id] = true
 		valid_targets.append(combatant)
 		target_ids.append(String(combatant.combatant_id))
 	resolved_context["target_ids"] = target_ids
