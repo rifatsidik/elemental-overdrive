@@ -79,18 +79,21 @@ func _draw() -> void:
 			_draw_blade_storm(p, fade)
 
 func _draw_tornado(progress: float, fade: float, fire: bool) -> void:
-	var height := (155.0 if fire else 140.0) * strength
-	var max_radius := (62.0 if fire else 70.0) * strength
-	var rotation_speed := age * (13.0 if fire else 9.0)
+	if fire:
+		_draw_fire_tornado(progress, fade)
+		return
+	var height := 140.0 * strength
+	var max_radius := 70.0 * strength
+	var rotation_speed := age * 9.0
 	draw_circle(Vector2.ZERO, max_radius * (0.55 + 0.25 * (1.0 - progress)), Color(tint.r, tint.g, tint.b, fade * 0.12))
 	for i in range(7 + layer_budget * 2):
 		var t := float(i) / float(7 + layer_budget * 2)
 		var y := lerpf(height * 0.5, -height * 0.5, t)
 		var radius := lerpf(max_radius * 0.22, max_radius, t)
-		var angle := rotation_speed * (1.0 if fire else -1.0) + t * TAU * 2.4
+		var angle := -rotation_speed + t * TAU * 2.4
 		var center := Vector2(cos(angle) * radius, y)
 		var next_t := minf(1.0, t + 0.12)
-		var next_angle := rotation_speed * (1.0 if fire else -1.0) + next_t * TAU * 2.4
+		var next_angle := -rotation_speed + next_t * TAU * 2.4
 		var next_point := Vector2(cos(next_angle) * lerpf(max_radius * 0.22, max_radius, next_t), lerpf(height * 0.5, -height * 0.5, next_t))
 		var width := (8.0 + 8.0 * sin(t * PI)) * strength
 		draw_line(center, next_point, Color(tint.r, tint.g * 0.45, tint.b * 0.15, fade * 0.28), width * 2.3, true)
@@ -103,25 +106,78 @@ func _draw_tornado(progress: float, fade: float, fire: bool) -> void:
 		var pos := Vector2(cos(angle) * radius, lerpf(height * 0.48, -height * 0.48, t))
 		var dot_radius: float = float(particle["radius"]) * fade
 		draw_circle(pos, dot_radius * 1.8, Color(tint.r, tint.g, tint.b, fade * 0.24))
-		draw_circle(pos, dot_radius, Color(1.0, 0.92, 0.62, fade * 0.85) if fire else Color(0.9, 1.0, 0.98, fade * 0.85))
+		draw_circle(pos, dot_radius, Color(0.9, 1.0, 0.98, fade * 0.85))
 
 func _draw_fire_burst(progress: float, fade: float) -> void:
-	var radius := (18.0 + progress * 118.0) * strength
-	draw_circle(Vector2.ZERO, radius * 0.38, Color(1.0, 0.14, 0.01, fade * 0.2))
-	for i in range(3 + layer_budget):
-		var ring := radius * (0.45 + float(i) * 0.18)
-		draw_arc(Vector2.ZERO, ring, age * (4.0 + float(i)), age * (4.0 + float(i)) + PI * 1.7, 52, Color(tint.r, tint.g * 0.7, tint.b, fade * (0.8 / float(i + 1))), maxf(1.2, 5.0 - float(i)), true)
+	# Flame tongues rise from a hot base; avoid abstract energy rings.
+	var flare := 1.0 - smoothstep(0.0, 0.22, age)
+	draw_circle(Vector2(0.0, 8.0 * strength), (20.0 + flare * 15.0) * strength, Color(1.0, 0.12, 0.015, fade * 0.2))
+	draw_circle(Vector2(0.0, 7.0 * strength), (10.0 + flare * 8.0) * strength, Color(1.0, 0.36, 0.025, fade * 0.42))
+	var tongue_count := 6 + layer_budget * 2
+	for i in range(tongue_count):
+		var u := float(i) / float(maxi(1, tongue_count - 1))
+		var angle := lerpf(-1.12, 1.12, u) + sin(age * 17.0 + float(i) * 2.1) * 0.13
+		var direction := Vector2(sin(angle), -cos(angle)).normalized()
+		var base := Vector2(lerpf(-15.0, 15.0, u) * strength, 10.0 * strength)
+		var length := (48.0 + 42.0 * (0.5 + 0.5 * sin(float(i) * 2.7 + age * 11.0))) * strength * (1.0 - progress * 0.3)
+		var width := (9.0 + 5.0 * sin(float(i) * 1.9 + age * 13.0)) * strength
+		var phase := float(i) * 1.73
+		draw_colored_polygon(_build_flame_shape(base, direction, length, width, phase), Color(1.0, 0.12, 0.012, fade * 0.92))
+		draw_colored_polygon(_build_flame_shape(base + direction * length * 0.06, direction, length * 0.78, width * 0.62, phase + 0.8), Color(1.0, 0.38, 0.025, fade * 0.96))
+		draw_colored_polygon(_build_flame_shape(base + direction * length * 0.12, direction, length * 0.56, width * 0.28, phase + 1.6), Color(1.0, 0.88, 0.32, fade * 0.96))
 	for particle in _particles:
 		var angle: float = float(particle["angle"])
-		var distance: float = float(particle["speed"]) * age
-		var dir := Vector2.from_angle(angle)
-		var pos := dir * distance + Vector2(0.0, 45.0 * age * age)
-		var r: float = float(particle["radius"]) * fade
-		draw_line(pos - dir * r * 5.0, pos, Color(1.0, 0.18, 0.01, fade * 0.5), r * 1.7, true)
-		draw_circle(pos, r, Color(1.0, 0.85, 0.46, fade * 0.95))
+		var speed: float = float(particle["speed"])
+		var pos := Vector2(cos(angle) * speed * age * 0.72, -absf(sin(angle)) * speed * age - 25.0 * age + 38.0 * age * age)
+		var r: float = float(particle["radius"]) * fade * 0.72
+		draw_circle(pos, r * 1.8, Color(1.0, 0.2, 0.01, fade * 0.18))
+		draw_circle(pos, r, Color(1.0, 0.82, 0.3, fade * 0.92))
+
+func _build_flame_shape(base: Vector2, direction: Vector2, length: float, half_width: float, phase: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var normal := Vector2(-direction.y, direction.x)
+	var segments := 12
+	for i in range(segments + 1):
+		var t := float(i) / float(segments)
+		var shape_width := half_width * pow(1.0 - t, 0.78) * (0.82 + 0.18 * sin(t * PI * 3.0 + phase))
+		var sway := sin(t * 7.0 + phase + age * 18.0) * half_width * 0.2 * t
+		points.append(base + direction * length * t + normal * (sway + shape_width))
+	for i in range(segments, -1, -1):
+		var t := float(i) / float(segments)
+		var shape_width := half_width * pow(1.0 - t, 0.78) * (0.82 + 0.18 * sin(t * PI * 3.0 + phase))
+		var sway := sin(t * 7.0 + phase + age * 18.0) * half_width * 0.2 * t
+		points.append(base + direction * length * t + normal * (sway - shape_width))
+	return points
+
+func _draw_fire_tornado(progress: float, fade: float) -> void:
+	# Layered flame tongues wrap upward around a central rising draft.
+	var height := 175.0 * strength
+	var layers := 5 + layer_budget * 2
+	for i in range(layers):
+		var t := float(i) / float(maxi(1, layers - 1))
+		var y := lerpf(height * 0.48, -height * 0.46, t)
+		var envelope := 0.25 + 0.75 * sin(PI * t)
+		var orbit := age * 7.5 + t * TAU * 1.7
+		var side := sin(orbit + float(i) * 0.7) * 38.0 * strength * envelope
+		var base := Vector2(side, y)
+		var direction := Vector2(sin(orbit * 0.3) * 0.32, -1.0).normalized()
+		var length := (48.0 + 38.0 * envelope) * strength * (1.0 - progress * 0.2)
+		var width := (13.0 + 7.0 * envelope) * strength
+		var phase := float(i) * 1.31
+		draw_colored_polygon(_build_flame_shape(base, direction, length, width, phase), Color(1.0, 0.1, 0.008, fade * 0.72))
+		draw_colored_polygon(_build_flame_shape(base + direction * length * 0.08, direction, length * 0.74, width * 0.62, phase + 0.9), Color(1.0, 0.34, 0.018, fade * 0.86))
+		draw_colored_polygon(_build_flame_shape(base + direction * length * 0.15, direction, length * 0.52, width * 0.25, phase + 1.8), Color(1.0, 0.86, 0.3, fade * 0.88))
+	for particle in _particles:
+		var t := fposmod(age * 0.9 + float(particle["phase"]) / TAU, 1.0)
+		var angle := float(particle["angle"]) + age * 3.0
+		var radius := lerpf(8.0, 42.0 * strength, t)
+		var pos := Vector2(cos(angle) * radius, lerpf(height * 0.42, -height * 0.46, t))
+		var r: float = float(particle["radius"]) * fade * 0.65
+		draw_circle(pos, r * 1.8, Color(1.0, 0.18, 0.01, fade * 0.16))
+		draw_circle(pos, r, Color(1.0, 0.8, 0.3, fade * 0.9))
 
 func _draw_water_burst(progress: float, fade: float) -> void:
-	# A pressurized water sheet that tears into curved fingers and falls as droplets.
+	# A pressurized water sheet with a broad, uneven crest and round droplets.
 	var expansion := smoothstep(0.0, 0.62, progress)
 	var collapse := smoothstep(0.55, 1.0, progress)
 	var width := (26.0 + 92.0 * expansion) * strength
@@ -141,26 +197,6 @@ func _draw_water_burst(progress: float, fade: float) -> void:
 	for i in range(2, 23):
 		crest_line.append(sheet[i] + Vector2(0.0, 2.0 * strength))
 	draw_polyline(crest_line, Color(0.48, 0.85, 1.0, fade * 0.9), 2.0 * strength, true)
-	# A few compact, thick curls; the broad sheet and droplets carry the splash.
-	for i in range(3 + layer_budget):
-		var u := float(i) / float(2 + layer_budget)
-		var side := lerpf(-1.0, 1.0, u)
-		var base := Vector2(side * width * 0.7, 1.0)
-		var h := (24.0 + 14.0 * sin(age * 8.0 + float(i) * 1.7)) * strength
-		var control := base + Vector2(side * h * 0.2, -h * 0.78)
-		var tip := base + Vector2(side * h * 0.36 + sin(age * 13.0 + float(i)) * 2.0, -h * 0.3)
-		var curve := PackedVector2Array()
-		for step in range(13):
-			var t := float(step) / 12.0
-			var q := 1.0 - t
-			curve.append(base * q * q + control * 2.0 * q * t + tip * t * t)
-		draw_polyline(curve, Color(0.015, 0.22, 0.55, fade * 0.88), 8.0 * strength, true)
-		draw_polyline(curve, Color(0.02, 0.5, 0.82, fade * 0.94), 4.5 * strength, true)
-		var glint := PackedVector2Array()
-		for glint_index in range(3, 7):
-			glint.append(curve[glint_index])
-		draw_polyline(glint, Color(0.72, 0.95, 1.0, fade * 0.84), 1.2 * strength, true)
-		draw_circle(tip, 2.5 * strength, Color(0.42, 0.8, 0.98, fade * 0.9))
 	# Outward droplets arc down under gravity; they are not uniform radial rays.
 	for particle in _particles:
 		var angle: float = float(particle["angle"])
@@ -180,39 +216,51 @@ func _draw_water_burst(progress: float, fade: float) -> void:
 	draw_polyline(ripple_points, Color(0.3, 0.7, 0.94, fade * 0.7), 2.0 * strength, true)
 
 func _draw_torrent(progress: float, fade: float) -> void:
-	# A thick, continuously twisting column of water built from tapered fluid ribbons.
+	# One continuous twisting liquid volume with a broad silhouette, not thin vertical strands.
 	var height := 185.0 * strength
-	var width := 34.0 * strength
-	for strand in range(3 + layer_budget):
-		var phase := age * (5.0 + float(strand) * 0.7) + float(strand) * TAU / float(3 + layer_budget)
-		var points := PackedVector2Array()
-		var highlight := PackedVector2Array()
-		var segments := 22
-		for i in range(segments + 1):
-			var u := float(i) / float(segments)
-			var y := lerpf(height * 0.48, -height * 0.52, u)
-			var envelope := 0.35 + 0.65 * sin(PI * u)
-			var x := sin(u * TAU * 1.5 + phase) * width * envelope
-			x += sin(u * 15.0 - age * 19.0 + float(strand)) * 3.0 * strength
-			points.append(Vector2(x, y))
-			highlight.append(Vector2(x + 2.5 * strength, y))
-		var ribbon_width := (7.0 + 5.0 * sin(phase)) * strength
-		draw_polyline(points, Color(0.015, 0.24, 0.6, fade * 0.76), ribbon_width * 1.9, true)
-		draw_polyline(points, Color(0.02, 0.48, 0.79, fade * 0.92), ribbon_width, true)
-		draw_polyline(highlight, Color(0.56, 0.86, 1.0, fade * 0.84), maxf(1.0, ribbon_width * 0.22), true)
-	# Water breaks off at the base in uneven beads.
+	var half_width := 25.0 * strength
+	var body := PackedVector2Array()
+	var inner_body := PackedVector2Array()
+	var segments := 24
+	for i in range(segments + 1):
+		var u := float(i) / float(segments)
+		var y := lerpf(-height * 0.52, height * 0.48, u)
+		var envelope := 0.38 + 0.62 * sin(PI * u)
+		var center_x := sin(u * TAU * 1.25 - age * 5.0) * half_width * 0.62 * envelope
+		center_x += sin(u * 13.0 + age * 8.0) * 2.0 * strength
+		var width := half_width * envelope * (0.82 + 0.18 * sin(u * 19.0 - age * 12.0))
+		body.append(Vector2(center_x - width, y))
+		inner_body.append(Vector2(center_x - width * 0.52, y))
+	for i in range(segments, -1, -1):
+		var u := float(i) / float(segments)
+		var y := lerpf(-height * 0.52, height * 0.48, u)
+		var envelope := 0.38 + 0.62 * sin(PI * u)
+		var center_x := sin(u * TAU * 1.25 - age * 5.0) * half_width * 0.62 * envelope
+		center_x += sin(u * 13.0 + age * 8.0) * 2.0 * strength
+		var width := half_width * envelope * (0.82 + 0.18 * sin(u * 19.0 - age * 12.0))
+		body.append(Vector2(center_x + width, y))
+		inner_body.append(Vector2(center_x + width * 0.38, y))
+	draw_colored_polygon(body, Color(0.015, 0.24, 0.6, fade * 0.84))
+	draw_colored_polygon(inner_body, Color(0.02, 0.5, 0.84, fade * 0.88))
+	# Broken, short surface glints read as reflected light, not long blades.
+	for i in range(5):
+		var u := fposmod(float(i) * 0.21 + age * 0.37, 0.9) + 0.05
+		var y := lerpf(-height * 0.42, height * 0.38, u)
+		var envelope := 0.38 + 0.62 * sin(PI * u)
+		var center_x := sin(u * TAU * 1.25 - age * 5.0) * half_width * 0.62 * envelope
+		var glint_width := (5.0 + 8.0 * sin(age * 9.0 + float(i))) * strength
+		draw_line(Vector2(center_x - glint_width, y), Vector2(center_x + glint_width, y - 2.0), Color(0.62, 0.9, 1.0, fade * 0.72), 1.5 * strength, true)
 	for i in range(8 + layer_budget * 3):
 		var angle := age * 3.2 + float(i) * TAU / float(8 + layer_budget * 3)
 		var speed := (32.0 + float(i % 4) * 11.0) * strength
 		var pos := Vector2(cos(angle) * speed * progress, 24.0 + sin(angle) * speed * 0.18 + 25.0 * progress * progress)
 		var r := (1.8 + float(i % 3) * 0.7) * strength * fade
 		draw_circle(pos, r, Color(0.5, 0.82, 0.98, fade * 0.88))
-	# Pressure ring is flattened to the floor plane.
 	var ring := PackedVector2Array()
 	for i in range(33):
 		var a := PI * float(i) / 32.0
 		ring.append(Vector2(cos(a) * (20.0 + progress * 54.0) * strength, 20.0 + sin(a) * (5.0 + progress * 10.0) * strength))
-	draw_polyline(ring, Color(tint.r, tint.g, tint.b, fade * 0.76), 2.4 * strength, true)
+	draw_polyline(ring, Color(tint.r, tint.g, tint.b, fade * 0.76), 2.4 * strength)
 
 func _draw_blade_storm(progress: float, fade: float) -> void:
 	var count := 4 + layer_budget * 2
