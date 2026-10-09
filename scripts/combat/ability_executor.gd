@@ -61,6 +61,17 @@ func _register_default(
 func has_element(element_id: StringName) -> bool:
 	return _elements.has(element_id)
 
+func get_chain_budget(element_id: StringName, secondary_element_id: StringName = &"", context: Dictionary = {}) -> int:
+	if not _elements.has(element_id):
+		return 1
+	var base_budget := maxi(1, int(_elements[element_id].get("max_chain_targets")))
+	if secondary_element_id == &"":
+		return base_budget
+	var reaction: Dictionary = _interaction_resolver.resolve(element_id, secondary_element_id, context)
+	if bool(reaction.get("triggered", false)):
+		return clampi(int(reaction.get("max_chain_targets", base_budget)), 1, 32)
+	return base_budget
+
 func get_element_payload(element_id: StringName) -> Dictionary:
 	if not _elements.has(element_id):
 		return {}
@@ -88,7 +99,8 @@ func execute_ability(ability: Dictionary, context: Dictionary = {}) -> Dictionar
 	var status_duration: float = maxf(0.0, float(definition.get("status_duration")))
 	var damage_multiplier := float(definition.get("damage_scale"))
 	var impulse_multiplier := float(definition.get("impulse_scale"))
-	var max_targets := maxi(1, int(definition.get("max_chain_targets")))
+	var is_chain: bool = bool(ability.get("chain", false))
+	var max_targets := maxi(1, int(ability.get("max_targets", definition.get("max_chain_targets") if is_chain else 1)))
 	var reaction: Dictionary = _interaction_resolver.resolve(element_id, &"")
 
 	var secondary_id := StringName(context.get("secondary_element_id", &""))
@@ -101,7 +113,8 @@ func execute_ability(ability: Dictionary, context: Dictionary = {}) -> Dictionar
 			if reaction_status != &"":
 				status_id = reaction_status
 				status_duration = maxf(status_duration, float(reaction.get("status_duration", 0.0)))
-			max_targets = maxi(1, int(reaction.get("max_chain_targets", 1)))
+			if is_chain:
+				max_targets = clampi(int(reaction.get("max_chain_targets", max_targets)), 1, 32)
 
 	var requested_targets: Array = context.get("target_ids", [])
 	var resolved_targets: Array = []
