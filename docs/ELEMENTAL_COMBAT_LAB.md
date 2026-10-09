@@ -17,12 +17,20 @@ Open `scenes/elemental_combat_lab.tscn` in Godot 4.7.x and run the current scene
 - `2` — Balanced
 - `3` — High
 - `X` — reset target health and statuses
+- `T` — preview fire tornado at the pointer
+- `G` — preview fire burst at the pointer
+- `Y` — preview water jet burst at the pointer
+- `U` — preview water torrent at the pointer
+- `I` — preview wind cyclone at the pointer
+- `O` — preview wind blade storm at the pointer
 
 The lab uses test combatants and passes them as collision candidates to the world adapter. A production game must replace this demonstration selection with its actual raycast/overlap/projectile collision query.
 
 ## What to verify
 
-1. Each element creates its own renderer at the resolved hit position.
+1. Fire should travel as a flame projectile, water as a pressurized water shot, and wind as a crescent sword-like slash; impact should play when the visual projectile arrives. Lightning remains a fast directional strike.
+2. T/G/Y/U/I/O preview reusable special-skill visual presets. These are presentation-only previews; gameplay damage/collision must be authored separately.
+3. Each element creates its own renderer at the resolved hit position.
 2. Lightning travels from the resolved cast origin to the impact point; it must not default to a fixed point above the target.
 3. Wind pressure rings/gust ribbons, fire flame tongues/embers, and water splash rims/droplets should remain visibly distinct and readable at the Balanced preset.
 4. Fire applies a burning status and periodic damage.
