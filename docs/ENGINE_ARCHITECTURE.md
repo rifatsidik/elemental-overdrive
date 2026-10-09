@@ -41,9 +41,9 @@ Own procedural lightning, arcs, plasma ribbons, beams, shockwaves, sparks, debri
 
 Exposes Low, Balanced, and High presets. Quality changes presentation complexity only, not damage, collision, status duration, or reaction rules. Measure actual frame time and allocations before tuning thresholds for a specific Android device.
 
-### Engine Lab
+### Engine Labs
 
-Currently demonstrates procedural energy VFX and quality controls. Combat modules have a headless smoke test, but are not yet connected to a playable enemy arena or the visual lab UI.
+The default Engine Lab demonstrates procedural energy VFX and quality controls. A separate Elemental Combat Lab wires test combatants, the world adapter, status effects, and the VFX router together. It remains an integration harness with synthetic targets, not a production enemy arena.
 
 ## Renderer policy
 
