@@ -70,18 +70,26 @@ func present_result(result: Dictionary) -> void:
 			color = Color(0.78, 0.92, 1.0, 1.0)
 		var strength := _strength_from_damage(float(result.get("damage", 10.0))) * _element_size_multiplier(effect_element)
 		if effect_element == &"fire" or effect_element == &"water" or effect_element == &"wind":
-			_spawn_projectile(effect_element, source_local, target_local, strength, color)
+			if _spawn_projectile(effect_element, source_local, target_local, strength, color):
+				continue
 		_spawn_effect(effect_element, target_local, source_local - target_local, strength, color)
 
-func _spawn_projectile(element_id: StringName, source: Vector2, target: Vector2, strength: float, color: Color) -> void:
+func _spawn_projectile(element_id: StringName, source: Vector2, target: Vector2, strength: float, color: Color) -> bool:
 	if source.distance_to(target) < 20.0 or get_child_count() >= max_active_effects:
-		return
+		return false
 	_sequence += 1
 	var projectile = PROJECTILE_SCRIPT.new()
 	projectile.name = "ProjectileVFX_%s_%03d" % [String(element_id), _sequence]
 	projectile.position = source
 	add_child(projectile)
+	projectile.arrived.connect(_on_projectile_arrived)
 	projectile.configure(element_id, target - source, strength, int((Time.get_ticks_usec() + _sequence * 7919) % 2147483647), layer_budget, color)
+	return true
+
+func _on_projectile_arrived(element_id: StringName, target: Vector2, source: Vector2, strength: float, color: Color) -> void:
+	if get_child_count() >= max_active_effects:
+		return
+	_spawn_effect(element_id, target, source - target, strength, color)
 
 func _spawn_effect(element_id: StringName, origin: Vector2, source_offset: Vector2, strength: float, color: Color) -> void:
 	_sequence += 1
