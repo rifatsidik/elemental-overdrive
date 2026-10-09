@@ -12,12 +12,15 @@ signal defeated
 @export_range(1.0, 100000.0, 1.0) var max_health: float = 100.0
 @export var destroy_on_defeat: bool = false
 
-var current_health: float = 100.0
+var current_health: float = -1.0
 var is_defeated: bool = false
 var status_controller: OverdriveStatusController
 
 func _ready() -> void:
-	current_health = clampf(current_health, 0.0, max_health)
+	if current_health < 0.0:
+		current_health = max_health
+	else:
+		current_health = clampf(current_health, 0.0, max_health)
 	if combatant_id == &"":
 		combatant_id = StringName("combatant_%d" % get_instance_id())
 	status_controller = STATUS_CONTROLLER_SCRIPT.new()
