@@ -1,166 +1,201 @@
 extends Node2D
 class_name EnergyBurst
 
-## Layered procedural lightning strike with a bright core, animated filaments,
-## radial impact rings and a bounded secondary particle burst.
+## Procedural lightning strike: jagged leader, asymmetric downward forks,
+## staged reveal, rapid re-strikes, and a short luminous afterglow.
+## Geometry is generated once per strike; per-frame work is bounded to drawing.
 
 const PARTICLE_SCRIPT = preload("res://scripts/visuals/energy_particles.gd")
 
 var strength: float = 1.0
 var seed_value: int = 1
 var age: float = 0.0
-var lifetime: float = 0.92
+var lifetime: float = 0.62
 var branch_budget: int = 4
 var layer_budget: int = 2
 var burst_color: Color = Color(0.18, 0.92, 1.0, 1.0)
 
 var _paths: Array[PackedVector2Array] = []
 var _branch_starts: Array[float] = []
+var _path_scales: Array[float] = []
 var _spark_directions: Array[Vector2] = []
 var _rng := RandomNumberGenerator.new()
 
-const STRIKE_TIME: float = 0.095
-const HOLD_TIME: float = 0.16
-const ARC_SEGMENTS: int = 14
+const STRIKE_TIME: float = 0.082
+const BOLT_HEIGHT: float = 360.0
+const MAIN_SEGMENTS: int = 18
 const MAX_BRANCHES: int = 8
 
 func configure(new_strength: float, new_seed: int, branches: int, layers: int) -> void:
-    strength = clampf(new_strength, 0.1, 2.0)
-    seed_value = new_seed
-    branch_budget = clampi(branches, 1, MAX_BRANCHES)
-    layer_budget = clampi(layers, 1, 4)
-    _rng.seed = seed_value
-    age = 0.0
-    _build_paths()
+	strength = clampf(new_strength, 0.1, 2.0)
+	seed_value = new_seed
+	branch_budget = clampi(branches, 1, MAX_BRANCHES)
+	layer_budget = clampi(layers, 1, 4)
+	_rng.seed = seed_value
+	age = 0.0
+	_build_paths()
 
-    var sparks = PARTICLE_SCRIPT.new()
-    sparks.name = "EnergyParticles"
-    add_child(sparks)
-    sparks.configure(seed_value ^ 0x5F3759DF, 12 + layer_budget * 12, strength)
-    queue_redraw()
+	var sparks = PARTICLE_SCRIPT.new()
+	sparks.name = "EnergyParticles"
+	add_child(sparks)
+	sparks.configure(seed_value ^ 0x5F3759DF, 10 + layer_budget * 10, strength)
+	queue_redraw()
 
 func _ready() -> void:
-    var additive_material := CanvasItemMaterial.new()
-    additive_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-    material = additive_material
-    set_process(true)
+	var additive_material := CanvasItemMaterial.new()
+	additive_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	material = additive_material
+	set_process(true)
 
 func _process(delta: float) -> void:
-    age += delta
-    if age >= lifetime:
-        queue_free()
-        return
-    queue_redraw()
+	age += delta
+	if age >= lifetime:
+		queue_free()
+		return
+	queue_redraw()
 
 func _build_paths() -> void:
-    _paths.clear()
-    _branch_starts.clear()
-    _spark_directions.clear()
+	_paths.clear()
+	_branch_starts.clear()
+	_path_scales.clear()
+	_spark_directions.clear()
 
-    var main := PackedVector2Array()
-    main.append(Vector2(_rng.randf_range(-10.0, 10.0), -360.0 * strength))
-    for i in range(1, ARC_SEGMENTS):
-        var t := float(i) / float(ARC_SEGMENTS)
-        var envelope := sin(t * PI * 0.82)
-        var spread := lerpf(18.0, 58.0, t) * strength
-        main.append(Vector2(_rng.randf_range(-spread, spread) * envelope, lerpf(-360.0, -5.0, t) * strength))
-    main.append(Vector2(_rng.randf_range(-12.0, 12.0) * strength, 0.0))
-    _paths.append(main)
-    _branch_starts.append(0.0)
+	# A constrained random walk produces a coherent leader instead of
+	# unrelated zigzags: each step remembers the previous lateral position.
+	var main := PackedVector2Array()
+	var x := _rng.randf_range(-8.0, 8.0) * strength
+	main.append(Vector2(x, -BOLT_HEIGHT * strength))
+	for i in range(1, MAIN_SEGMENTS):
+		var t := float(i) / float(MAIN_SEGMENTS)
+		var envelope := pow(maxf(0.0, sin(t * PI)), 0.72)
+		var correction := -x * 0.16
+		x += (correction + _rng.randf_range(-31.0, 31.0) * envelope) * strength
+		x = clampf(x, -76.0 * strength, 76.0 * strength)
+		main.append(Vector2(x, lerpf(-BOLT_HEIGHT * strength, 0.0, t)))
+	main.append(Vector2(_rng.randf_range(-10.0, 10.0) * strength, 0.0))
+	_paths.append(main)
+	_branch_starts.append(0.0)
+	_path_scales.append(1.0)
 
-    for i in range(branch_budget):
-        var source_index := _rng.randi_range(2, main.size() - 3)
-        var source := main[source_index]
-        var side := -1.0 if i % 2 == 0 else 1.0
-        var branch := PackedVector2Array()
-        branch.append(source)
-        var end := source + Vector2(side * _rng.randf_range(42.0, 132.0) * strength, _rng.randf_range(-34.0, 58.0) * strength)
-        branch.append(source.lerp(end, 0.32) + Vector2(_rng.randf_range(-12.0, 12.0), _rng.randf_range(-18.0, 18.0)))
-        branch.append(source.lerp(end, 0.70) + Vector2(_rng.randf_range(-14.0, 14.0), _rng.randf_range(-10.0, 10.0)))
-        branch.append(end)
-        _paths.append(branch)
-        _branch_starts.append(float(source_index) / float(main.size() - 1))
+	# Realistic forks are irregular and mostly travel downward/outward;
+	# alternating fixed left/right branches would look too decorative.
+	for i in range(branch_budget):
+		var source_index := _rng.randi_range(3, main.size() - 4)
+		var source := main[source_index]
+		var side := -1.0 if _rng.randf() < 0.5 else 1.0
+		var segments := _rng.randi_range(3, 6)
+		var branch := PackedVector2Array()
+		branch.append(source)
+		var point := source
+		var total_length := _rng.randf_range(44.0, 116.0) * strength
+		for segment in range(segments):
+			var t := float(segment + 1) / float(segments)
+			var step_x := side * total_length / float(segments)
+			step_x += _rng.randf_range(-15.0, 15.0) * strength
+			var step_y := _rng.randf_range(9.0, 25.0) * strength
+			point += Vector2(step_x, step_y)
+			# Branches taper back toward the strike's center less as they grow.
+			point.x = lerpf(point.x, source.x + side * total_length, 0.12 * t)
+			branch.append(point)
+		_paths.append(branch)
+		_branch_starts.append(float(source_index) / float(main.size() - 1))
+		_path_scales.append(_rng.randf_range(0.36, 0.58))
 
-    if layer_budget >= 2:
-        var fork_count := mini(3 + layer_budget, branch_budget + 2)
-        for i in range(fork_count):
-            var source_index := _rng.randi_range(2, main.size() - 3)
-            var source := main[source_index]
-            var fork := PackedVector2Array([source])
-            var side := -1.0 if _rng.randf() < 0.5 else 1.0
-            fork.append(source + Vector2(side * _rng.randf_range(24.0, 70.0) * strength, _rng.randf_range(16.0, 58.0) * strength))
-            _paths.append(fork)
-            _branch_starts.append(float(source_index) / float(main.size() - 1))
+	# Tiny side leaders add fine branching without multiplying geometry heavily.
+	if layer_budget >= 2:
+		var twig_count := mini(3, int(floor(float(branch_budget) * 0.5)))
+		for i in range(twig_count):
+			var source_index := _rng.randi_range(5, main.size() - 5)
+			var source := main[source_index]
+			var side := -1.0 if _rng.randf() < 0.5 else 1.0
+			var twig := PackedVector2Array([source])
+			twig.append(source + Vector2(side * _rng.randf_range(18.0, 44.0) * strength, _rng.randf_range(15.0, 42.0) * strength))
+			_paths.append(twig)
+			_branch_starts.append(float(source_index) / float(main.size() - 1))
+			_path_scales.append(0.24)
 
-    for i in range(8 + layer_budget * 5):
-        _spark_directions.append(Vector2.from_angle(_rng.randf_range(0.0, TAU)))
+	for i in range(8 + layer_budget * 4):
+		_spark_directions.append(Vector2.from_angle(_rng.randf_range(0.0, TAU)))
 
 func _draw() -> void:
-    var progress := clampf(age / lifetime, 0.0, 1.0)
-    var strike := clampf(age / STRIKE_TIME, 0.0, 1.0)
-    var decay := clampf((age - HOLD_TIME) / maxf(0.001, lifetime - HOLD_TIME), 0.0, 1.0)
-    var fade := 1.0 - smoothstep(0.0, 1.0, decay)
-    var impact := 1.0 - clampf(age / 0.30, 0.0, 1.0)
-    var pulse := 0.72 + 0.28 * absf(sin(age * 76.0 + float(seed_value % 31)))
-    var radius := lerpf(8.0, 178.0, smoothstep(0.0, 1.0, progress)) * strength
+	var light := _flash_envelope()
+	var pulse := 0.76 + 0.24 * absf(sin(age * 91.0 + float(seed_value % 37)))
+	var energy := light * pulse
+	var impact := 1.0 - clampf(age / 0.28, 0.0, 1.0)
+	var afterglow := 1.0 - smoothstep(0.0, lifetime, age)
 
-    draw_circle(Vector2.ZERO, (46.0 + 54.0 * impact) * strength, Color(0.04, 0.28, 1.0, 0.075 * fade))
-    draw_circle(Vector2.ZERO, (27.0 + 34.0 * impact) * strength, Color(0.02, 0.76, 1.0, 0.13 * fade))
-    draw_circle(Vector2.ZERO, (13.0 + 11.0 * impact) * strength, Color(0.52, 0.98, 1.0, 0.23 * fade))
-    draw_circle(Vector2.ZERO, 5.0 * strength, Color(1.0, 1.0, 1.0, fade * pulse))
+	# Compact impact bloom and expanding rings: keep the brightest area at
+	# the strike endpoint instead of flooding the entire screen with haze.
+	draw_circle(Vector2.ZERO, (42.0 + 46.0 * impact) * strength, Color(0.025, 0.18, 1.0, 0.075 * afterglow))
+	draw_circle(Vector2.ZERO, (22.0 + 24.0 * impact) * strength, Color(0.0, 0.72, 1.0, 0.13 * afterglow))
+	draw_circle(Vector2.ZERO, 5.0 * strength, Color(0.88, 1.0, 1.0, 0.78 * energy))
+	for ring_index in range(layer_budget):
+		var ring_progress := clampf(age / (0.19 + float(ring_index) * 0.045), 0.0, 1.0)
+		var ring_radius := lerpf(4.0, 92.0 + float(ring_index) * 28.0, ring_progress) * strength
+		var ring_alpha := (1.0 - ring_progress) * afterglow * (0.42 / float(ring_index + 1))
+		var ring_color := Color(0.12, 0.58, 1.0, ring_alpha) if ring_index % 2 == 0 else Color(0.1, 1.0, 0.92, ring_alpha * 0.7)
+		draw_arc(Vector2.ZERO, ring_radius, 0.0, TAU, 40, ring_color, maxf(1.0, 3.5 - float(ring_index)), true)
 
-    for ring_index in range(layer_budget):
-        var ring_radius := radius * (1.0 + float(ring_index) * 0.28)
-        var ring_alpha := fade * (0.52 / float(ring_index + 1))
-        var ring_color := Color(0.12, 0.58, 1.0, ring_alpha) if ring_index % 2 == 0 else Color(0.1, 1.0, 0.92, ring_alpha * 0.72)
-        draw_arc(Vector2.ZERO, ring_radius, age * 0.8, TAU + age * 0.8, 64, ring_color, maxf(1.0, 4.5 - float(ring_index)), true)
+	# Short streaks leave the impact in a radial burst, then disappear quickly.
+	if age < 0.18:
+		var spark_progress := clampf(age / 0.18, 0.0, 1.0)
+		for i in range(mini(_spark_directions.size(), 6 + layer_budget * 3)):
+			var direction := _spark_directions[i]
+			var start := direction * (5.0 * strength)
+			var finish := direction * (12.0 + 100.0 * spark_progress) * strength
+			var spark_alpha := (1.0 - spark_progress) * energy
+			draw_line(start, finish, Color(0.12, 0.72, 1.0, spark_alpha * 0.62), 2.0, true)
+			draw_line(start, finish, Color(0.82, 1.0, 1.0, spark_alpha * 0.82), 1.0, true)
 
-    if age < 0.22:
-        for i in range(mini(_spark_directions.size(), 8 + layer_budget * 4)):
-            var dir := _spark_directions[i]
-            var travel := (16.0 + 118.0 * clampf(age / 0.22, 0.0, 1.0)) * strength
-            var start := dir * (7.0 * strength)
-            var finish := dir * travel
-            draw_line(start, finish, Color(0.18, 0.8, 1.0, fade * 0.68), 2.0, true)
-            draw_line(start, finish, Color(0.82, 1.0, 1.0, fade * 0.8), 1.0, true)
+	for path_index in range(_paths.size()):
+		var source_points := _paths[path_index]
+		var is_main := path_index == 0
+		var reveal := clampf(age / STRIKE_TIME, 0.0, 1.0)
+		if not is_main:
+			var start_at := _branch_starts[path_index]
+			reveal = clampf((reveal - start_at) / maxf(0.001, 1.0 - start_at), 0.0, 1.0)
+		if age >= STRIKE_TIME:
+			reveal = 1.0
+		if reveal <= 0.0:
+			continue
 
-    for path_index in range(_paths.size()):
-        var points := _paths[path_index]
-        var is_main := path_index == 0
-        var start_at := _branch_starts[path_index]
-        var reveal := strike
-        if not is_main:
-            reveal = clampf((strike - start_at * 0.58) / maxf(0.001, 1.0 - start_at * 0.58), 0.0, 1.0)
-        if age > STRIKE_TIME:
-            reveal = 1.0
-        for segment_index in range(points.size() - 1):
-            var segment_start := float(segment_index) / float(points.size() - 1)
-            if segment_start > reveal:
-                continue
-            var segment_end := minf(float(segment_index + 1) / float(points.size() - 1), reveal)
-            var fraction := clampf((segment_end - segment_start) * float(points.size() - 1), 0.0, 1.0)
-            var a := points[segment_index]
-            var b := a.lerp(points[segment_index + 1], fraction)
-            var wave := sin(age * (83.0 + float(path_index % 4) * 11.0) + float(segment_index * 9 + path_index * 13))
-            var jitter := Vector2(wave * (2.0 + layer_budget) * fade, cos(age * 51.0 + float(path_index)) * 2.2 * fade)
-            var aa := a + jitter
-            var bb := b - jitter * 0.7
-            var branch_scale := 1.0 if is_main else 0.46
-            var flicker := 0.72 + 0.28 * absf(sin(age * 97.0 + float(path_index * 17)))
-            var hot := fade * flicker
+		var visible_points := _revealed_points(source_points, reveal)
+		if visible_points.size() < 2:
+			continue
+		var path_scale := _path_scales[path_index]
+		var flicker := energy * (0.82 + 0.18 * absf(sin(age * 137.0 + float(path_index * 17))))
+		var broad_width := (22.0 if is_main else 13.0) * path_scale * strength
+		draw_polyline(visible_points, Color(0.015, 0.12, 1.0, 0.12 * flicker), broad_width, true)
+		draw_polyline(visible_points, Color(0.0, 0.52, 1.0, 0.24 * flicker), broad_width * 0.62, true)
+		if layer_budget >= 2:
+			draw_polyline(visible_points, Color(0.0, 0.94, 1.0, 0.48 * flicker), broad_width * 0.30, true)
+		if layer_budget >= 3:
+			draw_polyline(visible_points, Color(0.68, 1.0, 1.0, 0.76 * flicker), broad_width * 0.15, true)
+		draw_polyline(visible_points, Color(0.92, 1.0, 1.0, flicker), maxf(1.0, (2.0 if is_main else 1.15) * path_scale * strength), true)
 
-            draw_line(aa, bb, Color(0.015, 0.12, 1.0, 0.12 * hot), 28.0 * branch_scale * strength, true)
-            draw_line(aa, bb, Color(0.0, 0.52, 1.0, 0.20 * hot), 18.0 * branch_scale * strength, true)
-            draw_line(aa, bb, Color(0.0, 1.0, 0.96, 0.34 * hot), 10.0 * branch_scale * strength, true)
-            if layer_budget >= 2:
-                draw_line(aa, bb, Color(0.70, 1.0, 1.0, 0.72 * hot), 4.6 * branch_scale * strength, true)
-            draw_line(aa, bb, Color(1.0, 1.0, 1.0, hot), 1.8 * branch_scale * strength, true)
+func _revealed_points(path: PackedVector2Array, reveal: float) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	if path.size() < 2:
+		return result
+	var segment_count := path.size() - 1
+	var visible_segments := reveal * float(segment_count)
+	var complete_segments := mini(int(floor(visible_segments)), segment_count)
+	for i in range(complete_segments + 1):
+		result.append(path[i])
+	if complete_segments < segment_count and result.size() > 0:
+		var fraction := visible_segments - float(complete_segments)
+		if fraction > 0.001:
+			result.append(path[complete_segments].lerp(path[complete_segments + 1], fraction))
+	return result
 
-            if layer_budget >= 3 and segment_index % 3 == 0 and age < 0.30:
-                var mid := aa.lerp(bb, 0.58)
-                var tangent := (bb - aa).orthogonal().normalized()
-                var tip := mid + tangent * _arc_offset(path_index, segment_index) * strength
-                draw_line(mid, tip, Color(0.15, 0.88, 1.0, hot * 0.8), 1.5, true)
-
-func _arc_offset(path_index: int, segment_index: int) -> float:
-    return sin(float(seed_value % 997) * 0.071 + float(path_index * 19 + segment_index * 37) * 1.713) * 13.0
+func _flash_envelope() -> float:
+	# A leader flash, a tiny dark gap, then one weaker return stroke.
+	if age < STRIKE_TIME:
+		return lerpf(0.28, 1.0, clampf(age / STRIKE_TIME, 0.0, 1.0))
+	if age < 0.125:
+		return 0.96
+	if age < 0.165:
+		return 0.18
+	if age < 0.235:
+		return 0.86
+	return 0.82 * (1.0 - smoothstep(0.235, lifetime, age))
