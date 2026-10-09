@@ -50,6 +50,7 @@ func _spawn_enemy() -> void:
     var enemy := Node2D.new()
     enemy.name = "Enemy"
     enemy.set_script(ENEMY_SCRIPT)
+    enemy.set_meta("target", player)
     add_child(enemy)
     var margin := 44.0
     var side := randi() % 4
@@ -58,7 +59,6 @@ func _spawn_enemy() -> void:
         1: enemy.position = Vector2(arena_size.x - margin, randf_range(110.0, arena_size.y - margin))
         2: enemy.position = Vector2(randf_range(margin, arena_size.x - margin), arena_size.y - margin)
         _: enemy.position = Vector2(margin, randf_range(110.0, arena_size.y - margin))
-    enemy.set_meta("target", player)
     enemies.append(enemy)
 
 func _alive_enemy_count() -> int:
