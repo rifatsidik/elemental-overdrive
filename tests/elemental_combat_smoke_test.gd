@@ -47,6 +47,7 @@ func _run_tests() -> void:
 	assert(forward.get("reaction_id") == "conductive_chain")
 	assert(forward.get("reaction_id") == reverse.get("reaction_id"))
 	assert(int(forward.get("max_chain_targets", 0)) == 5)
+	assert(executor.get_chain_budget(&"lightning", &"water", {"wet_surface": true}) == 5)
 
 	var element = ELEMENT_SCRIPT.new()
 	element.element_id = &"test_element"
