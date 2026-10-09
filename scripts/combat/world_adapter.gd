@@ -47,8 +47,8 @@ func execute_ability(
 			if is_instance_valid(target):
 				excluded.append(target.get_instance_id())
 		var element_id := StringName(ability.get("element_id", &""))
-		var element_data := executor.get_element_payload(element_id)
-		var chain_limit := int(element_data.get("max_chain_targets", 1))
+		var secondary_id := StringName(resolved_context.get("secondary_element_id", &""))
+		var chain_limit := executor.get_chain_budget(element_id, secondary_id, resolved_context)
 		var chain_origin := origin
 		if not targets.is_empty() and is_instance_valid(targets[0]) and targets[0] is Node2D:
 			chain_origin = (targets[0] as Node2D).global_position
@@ -103,7 +103,7 @@ func execute_ability(
 			continue
 		var actual_damage := target.apply_damage(damage, element_id)
 		var status_applied := false
-		if status_id != &"" and status_duration > 0.0:
+		if not target.is_defeated and status_id != &"" and status_duration > 0.0:
 			var params := status_parameters.duplicate(false)
 			params["source_element"] = element_id
 			status_applied = target.apply_status(status_id, status_duration, params)
