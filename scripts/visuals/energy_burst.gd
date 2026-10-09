@@ -26,6 +26,9 @@ func configure(new_strength: float, new_seed: int, branches: int, layers: int) -
     queue_redraw()
 
 func _ready() -> void:
+    var additive_material := CanvasItemMaterial.new()
+    additive_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+    material = additive_material
     set_process(true)
 
 func _process(delta: float) -> void:
