@@ -59,6 +59,7 @@ func _spawn_enemy() -> void:
         2: enemy.position = Vector2(randf_range(margin, arena_size.x - margin), arena_size.y - margin)
         _: enemy.position = Vector2(margin, randf_range(110.0, arena_size.y - margin))
     enemy.set_meta("target", player)
+    enemies.append(enemy)
 
 func _alive_enemy_count() -> int:
     var count := 0
