@@ -29,19 +29,20 @@ The lab uses test combatants and passes them as collision candidates to the worl
 ## What to verify
 
 1. Fire travels as a flame projectile, water as a pressurized water shot, and wind as a crescent sword-like slash; impact plays when the visual projectile arrives. Lightning remains a fast directional strike.
-2. Water uses controlled alpha blending so its blue body, cyan edge and white highlight stay readable instead of overexposing into a white/neon streak.
-3. Water impact forms smooth curved crown jets, separated droplets and staggered ripples; it should not show angular three-point kinks.
-4. T/G/Y/U/I/O preview reusable special-skill visual presets. These are presentation-only previews; gameplay damage/collision must be authored separately.
-5. Each element creates its own renderer at the resolved hit position.
-6. Lightning travels from the resolved cast origin to the impact point; it must not default to a fixed point above the target.
-7. Wind pressure rings/gust ribbons, fire flame tongues/embers, and water splash rims/droplets remain visibly distinct and readable at the Balanced preset.
-8. Fire applies a burning status and periodic damage.
-9. Wind and water impulses differ, and rigid/character bodies receive physics-compatible impulses.
-10. Lightning chains only through bounded candidate targets; targets outside chain range are ignored.
-11. Shift combinations produce reaction metadata and the corresponding visual cue.
-12. Low/Balanced/High changes visual complexity only; damage and status results stay independent of the quality profile.
-13. Repeated casts do not cause effect child count to grow without bound.
-14. `X` restores all target health and clears timed statuses.
+2. Water projectile must read as a moving volume with a tapered silhouette, uneven liquid surface, broken specular highlight and detached droplets—not as straight neon lines.
+3. Water impact must form a broad irregular liquid sheet, curling spray fingers, a flattened surface ripple and ballistic droplets. Water skill previews should use flowing sheets/streams rather than generic circular energy rings.
+4. Verify water remains blue/cyan and translucent without washing out to a white blob. Test both before and after a renderer node enters the scene tree.
+5. T/G/Y/U/I/O preview reusable special-skill visual presets. These are presentation-only previews; gameplay damage/collision must be authored separately.
+6. Each element creates its own renderer at the resolved hit position.
+7. Lightning travels from the resolved cast origin to the impact point; it must not default to a fixed point above the target.
+8. Wind pressure rings/gust ribbons, fire flame tongues/embers, and water splash rims/droplets remain visibly distinct and readable at the Balanced preset.
+9. Fire applies a burning status and periodic damage.
+10. Wind and water impulses differ, and rigid/character bodies receive physics-compatible impulses.
+11. Lightning chains only through bounded candidate targets; targets outside chain range are ignored.
+12. Shift combinations produce reaction metadata and the corresponding visual cue.
+13. Low/Balanced/High changes visual complexity only; damage and status results stay independent of the quality profile.
+14. Repeated casts do not cause effect child count to grow without bound.
+15. `X` restores all target health and clears timed statuses.
 
 ## Verification status
 
