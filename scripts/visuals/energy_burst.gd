@@ -22,7 +22,7 @@ var _spark_directions: Array[Vector2] = []
 var _rng := RandomNumberGenerator.new()
 
 const STRIKE_TIME: float = 0.082
-const BOLT_HEIGHT: float = 360.0
+const BOLT_HEIGHT: float = 255.0
 const MAIN_SEGMENTS: int = 18
 const MAX_BRANCHES: int = 8
 
@@ -63,16 +63,16 @@ func _build_paths() -> void:
 	# A constrained random walk produces a coherent leader instead of
 	# unrelated zigzags: each step remembers the previous lateral position.
 	var main := PackedVector2Array()
-	var x := _rng.randf_range(-8.0, 8.0) * strength
+	var x := _rng.randf_range(-5.0, 5.0) * strength
 	main.append(Vector2(x, -BOLT_HEIGHT * strength))
 	for i in range(1, MAIN_SEGMENTS):
 		var t := float(i) / float(MAIN_SEGMENTS)
 		var envelope := pow(maxf(0.0, sin(t * PI)), 0.72)
 		var correction := -x * 0.16
-		x += (correction + _rng.randf_range(-31.0, 31.0) * envelope) * strength
-		x = clampf(x, -76.0 * strength, 76.0 * strength)
+		x += (correction + _rng.randf_range(-23.0, 23.0) * envelope) * strength
+		x = clampf(x, -52.0 * strength, 52.0 * strength)
 		main.append(Vector2(x, lerpf(-BOLT_HEIGHT * strength, 0.0, t)))
-	main.append(Vector2(_rng.randf_range(-10.0, 10.0) * strength, 0.0))
+	main.append(Vector2(_rng.randf_range(-6.0, 6.0) * strength, 0.0))
 	_paths.append(main)
 	_branch_starts.append(0.0)
 	_path_scales.append(1.0)
@@ -87,12 +87,12 @@ func _build_paths() -> void:
 		var branch := PackedVector2Array()
 		branch.append(source)
 		var point := source
-		var total_length := _rng.randf_range(44.0, 116.0) * strength
+		var total_length := _rng.randf_range(30.0, 82.0) * strength
 		for segment in range(segments):
 			var t := float(segment + 1) / float(segments)
 			var step_x := side * total_length / float(segments)
-			step_x += _rng.randf_range(-15.0, 15.0) * strength
-			var step_y := _rng.randf_range(9.0, 25.0) * strength
+			step_x += _rng.randf_range(-10.0, 10.0) * strength
+			var step_y := _rng.randf_range(6.0, 18.0) * strength
 			point += Vector2(step_x, step_y)
 			# Branches taper back toward the strike's center less as they grow.
 			point.x = lerpf(point.x, source.x + side * total_length, 0.12 * t)
@@ -109,7 +109,7 @@ func _build_paths() -> void:
 			var source := main[source_index]
 			var side := -1.0 if _rng.randf() < 0.5 else 1.0
 			var twig := PackedVector2Array([source])
-			twig.append(source + Vector2(side * _rng.randf_range(18.0, 44.0) * strength, _rng.randf_range(15.0, 42.0) * strength))
+			twig.append(source + Vector2(side * _rng.randf_range(12.0, 30.0) * strength, _rng.randf_range(10.0, 30.0) * strength))
 			_paths.append(twig)
 			_branch_starts.append(float(source_index) / float(main.size() - 1))
 			_path_scales.append(0.24)
@@ -126,12 +126,12 @@ func _draw() -> void:
 
 	# Compact impact bloom and expanding rings: keep the brightest area at
 	# the strike endpoint instead of flooding the entire screen with haze.
-	draw_circle(Vector2.ZERO, (42.0 + 46.0 * impact) * strength, Color(0.025, 0.18, 1.0, 0.075 * afterglow))
-	draw_circle(Vector2.ZERO, (22.0 + 24.0 * impact) * strength, Color(0.0, 0.72, 1.0, 0.13 * afterglow))
-	draw_circle(Vector2.ZERO, 5.0 * strength, Color(0.88, 1.0, 1.0, 0.78 * energy))
+	draw_circle(Vector2.ZERO, (28.0 + 28.0 * impact) * strength, Color(0.025, 0.18, 1.0, 0.075 * afterglow))
+	draw_circle(Vector2.ZERO, (15.0 + 16.0 * impact) * strength, Color(0.0, 0.72, 1.0, 0.13 * afterglow))
+	draw_circle(Vector2.ZERO, 3.5 * strength, Color(0.88, 1.0, 1.0, 0.78 * energy))
 	for ring_index in range(layer_budget):
 		var ring_progress := clampf(age / (0.19 + float(ring_index) * 0.045), 0.0, 1.0)
-		var ring_radius := lerpf(4.0, 92.0 + float(ring_index) * 28.0, ring_progress) * strength
+		var ring_radius := lerpf(4.0, 58.0 + float(ring_index) * 18.0, ring_progress) * strength
 		var ring_alpha := (1.0 - ring_progress) * afterglow * (0.42 / float(ring_index + 1))
 		var ring_color := Color(0.12, 0.58, 1.0, ring_alpha) if ring_index % 2 == 0 else Color(0.1, 1.0, 0.92, ring_alpha * 0.7)
 		draw_arc(Vector2.ZERO, ring_radius, 0.0, TAU, 40, ring_color, maxf(1.0, 3.5 - float(ring_index)), true)
@@ -142,7 +142,7 @@ func _draw() -> void:
 		for i in range(mini(_spark_directions.size(), 6 + layer_budget * 3)):
 			var direction := _spark_directions[i]
 			var start := direction * (5.0 * strength)
-			var finish := direction * (12.0 + 100.0 * spark_progress) * strength
+			var finish := direction * (8.0 + 68.0 * spark_progress) * strength
 			var spark_alpha := (1.0 - spark_progress) * energy
 			draw_line(start, finish, Color(0.12, 0.72, 1.0, spark_alpha * 0.62), 2.0, true)
 			draw_line(start, finish, Color(0.82, 1.0, 1.0, spark_alpha * 0.82), 1.0, true)
@@ -164,14 +164,14 @@ func _draw() -> void:
 			continue
 		var path_scale := _path_scales[path_index]
 		var flicker := energy * (0.82 + 0.18 * absf(sin(age * 137.0 + float(path_index * 17))))
-		var broad_width := (22.0 if is_main else 13.0) * path_scale * strength
+		var broad_width := (15.0 if is_main else 8.5) * path_scale * strength
 		draw_polyline(visible_points, Color(0.015, 0.12, 1.0, 0.12 * flicker), broad_width, true)
 		draw_polyline(visible_points, Color(0.0, 0.52, 1.0, 0.24 * flicker), broad_width * 0.62, true)
 		if layer_budget >= 2:
 			draw_polyline(visible_points, Color(0.0, 0.94, 1.0, 0.48 * flicker), broad_width * 0.30, true)
 		if layer_budget >= 3:
 			draw_polyline(visible_points, Color(0.68, 1.0, 1.0, 0.76 * flicker), broad_width * 0.15, true)
-		draw_polyline(visible_points, Color(0.92, 1.0, 1.0, flicker), maxf(1.0, (2.0 if is_main else 1.15) * path_scale * strength), true)
+		draw_polyline(visible_points, Color(0.92, 1.0, 1.0, flicker), maxf(1.0, (1.5 if is_main else 0.9) * path_scale * strength), true)
 
 func _revealed_points(path: PackedVector2Array, reveal: float) -> PackedVector2Array:
 	var result := PackedVector2Array()
