@@ -114,6 +114,18 @@ func _input(event: InputEvent) -> void:
 			KEY_3:
 				performance_director.set_adaptive(false)
 				performance_director.set_quality(OverdrivePerformanceDirector.Quality.HIGH)
+			KEY_T:
+				_play_skill(&"fire_tornado")
+			KEY_G:
+				_play_skill(&"fire_burst")
+			KEY_Y:
+				_play_skill(&"water_jet_burst")
+			KEY_U:
+				_play_skill(&"water_torrent")
+			KEY_I:
+				_play_skill(&"wind_cyclone")
+			KEY_O:
+				_play_skill(&"wind_blade_storm")
 			KEY_X:
 				_reset_targets()
 		_update_quality_budgets()
@@ -146,6 +158,12 @@ func _cast_at(pointer: Vector2, combine_with_previous: bool) -> void:
 	else:
 		_last_message = "Ability rejected: " + String(result.get("reason", "unknown"))
 	previous_element = selected_element
+	queue_redraw()
+
+func _play_skill(skill_id: StringName) -> void:
+	var skill_position := get_global_mouse_position()
+	var played := router.play_skill(skill_id, skill_position, 1.0)
+	_last_message = "Skill preview: " + String(skill_id) if played else "Skill effect cap reached."
 	queue_redraw()
 
 func _reset_targets() -> void:
@@ -181,11 +199,12 @@ func _draw() -> void:
 		draw_line(Vector2(x, 0), Vector2(x, size.y), Color(0.10, 0.32, 0.55, 0.12), 1.0)
 	for y in range(0, int(size.y) + 1, 48):
 		draw_line(Vector2(0, y), Vector2(size.x, y), Color(0.10, 0.32, 0.55, 0.12), 1.0)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(size.x, 116.0)), Color(0.012, 0.018, 0.045, 0.98))
-	draw_line(Vector2(0.0, 116.0), Vector2(size.x, 116.0), Color(0.0, 0.85, 1.0, 0.42), 1.0)
+	draw_rect(Rect2(Vector2.ZERO, Vector2(size.x, 132.0)), Color(0.012, 0.018, 0.045, 0.98))
+	draw_line(Vector2(0.0, 132.0), Vector2(size.x, 132.0), Color(0.0, 0.85, 1.0, 0.42), 1.0)
 	draw_string(ThemeDB.fallback_font, Vector2(24.0, 34.0), "OVERDRIVE / ELEMENTAL COMBAT LAB", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 23, Color("#c7ffff"))
 	draw_string(ThemeDB.fallback_font, Vector2(25.0, 60.0), "Q LIGHTNING   W WIND   E FIRE   R WATER   /   SHIFT+CLICK: COMBINE", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 13, Color("#8bb9d9"))
-	draw_string(ThemeDB.fallback_font, Vector2(25.0, 84.0), "0 AUTO QUALITY   1 LOW   2 BALANCED   3 HIGH   X RESET TARGETS", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 13, Color("#8bb9d9"))
+	draw_string(ThemeDB.fallback_font, Vector2(25.0, 82.0), "0 AUTO QUALITY   1 LOW   2 BALANCED   3 HIGH   X RESET TARGETS", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 12, Color("#8bb9d9"))
+	draw_string(ThemeDB.fallback_font, Vector2(25.0, 103.0), "T FIRE TORNADO   G FIRE BURST   Y WATER JET   U WATER TORRENT   I WIND CYCLONE   O BLADE STORM", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 11, Color("#8bb9d9"))
 	draw_string(ThemeDB.fallback_font, Vector2(size.x - 24.0, 34.0), "QUALITY: " + performance_director.quality_label(), HORIZONTAL_ALIGNMENT_RIGHT, -1.0, 15, Color("#ffe18a"))
 	draw_string(ThemeDB.fallback_font, Vector2(size.x - 24.0, 59.0), "FPS %03d  /  %.1f ms  /  FX %02d" % [int(round(performance_director.fps_average)), performance_director.frame_time_ms, router.get_child_count()], HORIZONTAL_ALIGNMENT_RIGHT, -1.0, 12, Color("#ff8ab4"))
 	draw_line(caster.position, get_global_mouse_position(), Color(0.18, 0.92, 1.0, 0.12), 1.0, true)
