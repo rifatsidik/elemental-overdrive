@@ -5,6 +5,7 @@ const WORLD_ADAPTER_SCRIPT = preload("res://scripts/combat/world_adapter.gd")
 const COMBATANT_SCRIPT = preload("res://scripts/combat/combatant.gd")
 const RESOLVER_SCRIPT = preload("res://scripts/elements/interaction_resolver.gd")
 const ELEMENT_SCRIPT = preload("res://scripts/elements/element_definition.gd")
+const VFX_ROUTER_SCRIPT = preload("res://scripts/visuals/element_vfx_router.gd")
 
 func _initialize() -> void:
 	call_deferred("_run_tests")
@@ -55,6 +56,9 @@ func _run_tests() -> void:
 
 	var adapter = WORLD_ADAPTER_SCRIPT.new()
 	root.add_child(adapter)
+	var router = VFX_ROUTER_SCRIPT.new()
+	root.add_child(router)
+	assert(router.bind_adapter(adapter))
 	var combatant = COMBATANT_SCRIPT.new()
 	combatant.combatant_id = &"dummy"
 	combatant.position = Vector2(24.0, 0.0)
@@ -74,10 +78,13 @@ func _run_tests() -> void:
 	assert(int(world_result.get("hit_count", 0)) == 1)
 	assert(combatant.current_health < combatant.max_health)
 	assert(combatant.has_status(&"burning"))
+	assert(router.get_child_count() > 0)
 
 	print("OVERDRIVE elemental combat smoke tests: PASS")
 	root.remove_child(combatant)
 	combatant.free()
+	root.remove_child(router)
+	router.free()
 	root.remove_child(adapter)
 	adapter.free()
 	root.remove_child(executor)
