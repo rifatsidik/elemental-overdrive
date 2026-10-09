@@ -29,8 +29,7 @@ func configure(new_seed: int, new_count: int, new_strength: float) -> void:
             "size": _rng.randf_range(1.0, 3.4) * strength,
             "life": _rng.randf_range(0.22, lifetime),
             "max_life": lifetime,
-            "hue": _rng.randf_range(0.0, 1.0),
-            "spin": _rng.randf_range(-8.0, 8.0)
+            "hue": _rng.randf_range(0.0, 1.0)
         })
     set_process(true)
     queue_redraw()
@@ -46,8 +45,8 @@ func _process(delta: float) -> void:
         particle["life"] = life_left - delta
         var velocity: Vector2 = particle["velocity"]
         velocity.y += 620.0 * strength * delta
-        particle["velocity"] = velocity
-        particle["position"] = (particle["position"] as Vector2) + velocity * delta
+        var particle_position: Vector2 = particle["position"]
+        particle["position"] = particle_position + velocity * delta
         particle["velocity"] = velocity * (1.0 - minf(0.85, delta * 1.25))
     if not alive or age >= lifetime:
         queue_free()
