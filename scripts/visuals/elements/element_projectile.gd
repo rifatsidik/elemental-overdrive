@@ -22,6 +22,10 @@ func configure(new_element: StringName, destination_offset: Vector2, new_strengt
 	_rng.seed = _seed
 	layer_budget = clampi(layers, 1, 3)
 	tint = color
+	# Water needs controlled alpha layering; additive blending made the ribbons clip into a noisy white streak.
+	var projectile_material := CanvasItemMaterial.new()
+	projectile_material.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX if element_id == &"water" else CanvasItemMaterial.BLEND_MODE_ADD
+	material = projectile_material
 	lifetime = clampf(destination_offset.length() / 1900.0, 0.12, 0.38)
 	_droplet_offsets.clear()
 	for i in range(12 + layer_budget * 4):
