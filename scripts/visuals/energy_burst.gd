@@ -76,7 +76,12 @@ func _draw() -> void:
             var animated_b: Vector2 = b + Vector2(0.0, -wobble)
             for layer_index in range(layer_budget):
                 var width: float = (7.0 - float(layer_index) * 2.0) * (0.55 if is_branch else 1.0)
-                var alpha: float = fade * (0.14 if layer_index == 0 else 0.38 if layer_index == 1 else 0.95)
+                var layer_alpha: float = 0.95
+                if layer_index == 0:
+                    layer_alpha = 0.14
+                elif layer_index == 1:
+                    layer_alpha = 0.38
+                var alpha: float = fade * layer_alpha
                 var color: Color = Color(burst_color.r, burst_color.g, burst_color.b, alpha * pulse)
                 draw_line(animated_a, animated_b, color, maxf(1.0, width - float(layer_index) * 1.4), true)
 
