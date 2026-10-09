@@ -1,23 +1,25 @@
 # OVERDRIVE ENGINE
 
-A modular real-time 2D VFX and motion framework built on Godot 4.7.x, with a high-end visual target and adaptive quality for Android landscape.
+A modular real-time 2D VFX, motion, and elemental-combat foundation built on Godot 4.7.x, targeting high-end visuals with adaptive quality for Android landscape.
 
 ## Purpose
 
-This repository currently builds the **engine lab**, not survivor gameplay. Each subsystem should be testable in isolation before it is used by a future game.
+This repository builds the **engine lab and reusable engine systems**, not a finished game. Subsystems must remain independently testable before they are connected to a future game.
 
 ## Architecture
 
-See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md) for the v1.0 technical contract and implementation sequence.
+See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md) for the engine overview and [docs/ELEMENTAL_COMBAT_CONTRACT.md](docs/ELEMENTAL_COMBAT_CONTRACT.md) for ability/reaction contracts.
 
-- **Core** — shared clock, reproducible effect seeds, and event contracts.
-- **Energy Renderer** — procedural arcs, filaments, ribbons, beams, and shockwaves.
+- **Core** — shared clock, seeded effects, and event contracts.
+- **Element Definitions** — data-driven element identity, color, status, damage/impulse scaling, and bounded chain budgets.
+- **Ability Executor** — validates ability requests and emits simulation result payloads, with per-caster cooldowns.
+- **Interaction Resolver** — deterministic element-pair rules, reaction modifiers, statuses, and chain caps.
+- **Combat/world adapter (future)** — authoritative collision, target validation, health, and physics changes; intentionally separate from ability resolution.
+- **Energy Renderer** — procedural lightning, arcs, plasma ribbons, beams, and shockwaves.
 - **Particle System** — bounded sparks, debris, and trails.
 - **Impact & Physics** — gameplay impulses kept separate from decorative motion.
-- **Animation** — anticipation, peak, and follow-through envelopes.
-- **Light & Color** — palette, aura, flashes, and optional glow.
 - **Performance Director** — Low / Balanced / High quality budgets and runtime telemetry.
-- **Engine Lab** — isolated visual demonstrations and controls.
+- **Engine Lab** — isolated demonstrations and controls.
 
 ## Requirements
 
@@ -26,17 +28,17 @@ See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md) for the v1.0 tech
 
 ## Run
 
-Open this folder in Godot and press **F5**. The default scene is `scenes/engine_lab.tscn`.
+Open this folder in Godot and press **F5**. The default scene is `scenes/engine_lab.tscn`. In the current visual lab, click/tap the canvas to trigger a procedural energy burst.
 
-In the lab, click/tap the canvas to trigger a procedural energy burst. This first demo is intentionally small and is not a benchmark of final Android performance.
+The elemental modules are reusable building blocks; the current lab scene does not yet wire them to real actors, collision, health, or game progression.
 
 ## Quality and renderer policy
 
-The initial project keeps GL Compatibility as a conservative boot target while the first procedural demo is established. Renderer/HDR/glow changes must be checked against the actual Godot 4.7.x installation and target Android devices before being committed as the default. The engine must not assume every mobile GPU supports the same features or budget.
+The project keeps GL Compatibility as a conservative boot target. Renderer/HDR/glow changes must be checked against the actual Godot 4.7.x installation and target Android devices before being committed as the default. Visual quality must never alter simulation damage or reaction rules.
 
 ## Development rules
 
 - Keep commits small and independently testable.
-- Avoid gameplay-specific dependencies inside engine modules.
-- Keep visual effects bounded and make their complexity quality-scalable.
-- Do not report performance targets as achieved until measured on hardware.
+- Keep ability simulation separate from renderer nodes and quality settings.
+- Keep effects and chain reactions bounded.
+- Do not report parser/runtime correctness or performance targets as verified until tested in Godot and measured on hardware.
