@@ -63,7 +63,7 @@ func execute_ability(
 			candidate_targets.append(target)
 
 	var max_range := maxf(0.0, float(ability.get("max_range", 1200.0)))
-	var valid_targets: Array[Node] = []
+	var valid_targets: Array[OverdriveCombatant] = []
 	var target_ids: Array[String] = []
 	var seen_ids: Dictionary = {}
 	for target in candidate_targets:
