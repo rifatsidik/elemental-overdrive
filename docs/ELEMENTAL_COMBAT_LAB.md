@@ -28,18 +28,20 @@ The lab uses test combatants and passes them as collision candidates to the worl
 
 ## What to verify
 
-1. Fire should travel as a flame projectile, water as a pressurized water shot, and wind as a crescent sword-like slash; impact should play when the visual projectile arrives. Water uses controlled alpha blending to keep its blue body, cyan edge and white specular core readable without additive overdraw.\n2. Water impact should form smooth curved crown jets, separated droplets and staggered ripples; it should not collapse into a solid white/neon blob or show angular three-point kinks. Lightning remains a fast directional strike.
-2. T/G/Y/U/I/O preview reusable special-skill visual presets. These are presentation-only previews; gameplay damage/collision must be authored separately.
-3. Each element creates its own renderer at the resolved hit position.
-2. Lightning travels from the resolved cast origin to the impact point; it must not default to a fixed point above the target.
-3. Wind pressure rings/gust ribbons, fire flame tongues/embers, and water splash rims/droplets should remain visibly distinct and readable at the Balanced preset.
-4. Fire applies a burning status and periodic damage.
-5. Wind and water impulses differ, and rigid/character bodies receive physics-compatible impulses.
-6. Lightning chains only through bounded candidate targets; targets outside chain range are ignored.
-7. Shift combinations produce reaction metadata and the corresponding visual cue.
-8. Low/Balanced/High changes visual complexity only; damage and status results stay independent of the quality profile.
-9. Repeated casts do not cause effect child count to grow without bound.
-10. `X` restores all target health and clears timed statuses.
+1. Fire travels as a flame projectile, water as a pressurized water shot, and wind as a crescent sword-like slash; impact plays when the visual projectile arrives. Lightning remains a fast directional strike.
+2. Water uses controlled alpha blending so its blue body, cyan edge and white highlight stay readable instead of overexposing into a white/neon streak.
+3. Water impact forms smooth curved crown jets, separated droplets and staggered ripples; it should not show angular three-point kinks.
+4. T/G/Y/U/I/O preview reusable special-skill visual presets. These are presentation-only previews; gameplay damage/collision must be authored separately.
+5. Each element creates its own renderer at the resolved hit position.
+6. Lightning travels from the resolved cast origin to the impact point; it must not default to a fixed point above the target.
+7. Wind pressure rings/gust ribbons, fire flame tongues/embers, and water splash rims/droplets remain visibly distinct and readable at the Balanced preset.
+8. Fire applies a burning status and periodic damage.
+9. Wind and water impulses differ, and rigid/character bodies receive physics-compatible impulses.
+10. Lightning chains only through bounded candidate targets; targets outside chain range are ignored.
+11. Shift combinations produce reaction metadata and the corresponding visual cue.
+12. Low/Balanced/High changes visual complexity only; damage and status results stay independent of the quality profile.
+13. Repeated casts do not cause effect child count to grow without bound.
+14. `X` restores all target health and clears timed statuses.
 
 ## Verification status
 
