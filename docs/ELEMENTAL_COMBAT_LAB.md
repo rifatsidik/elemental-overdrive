@@ -30,7 +30,7 @@ The lab uses test combatants and passes them as collision candidates to the worl
 
 1. Fire travels as a flame projectile, water as a pressurized water shot, and wind as a crescent sword-like slash; impact plays when the visual projectile arrives. Lightning remains a fast directional strike.
 2. Water projectile must read as a moving volume with a tapered silhouette, uneven liquid surface, broken specular highlight and detached droplets—not as straight neon lines.
-3. Water impact must form a broad irregular liquid sheet, curling spray fingers, a flattened surface ripple and ballistic droplets. Water skill previews should use flowing sheets/streams rather than generic circular energy rings.
+3. Water impact must form a broad irregular liquid sheet, a few short thick curling splashes, a flattened surface ripple and ballistic droplets. The sheet contour must never fold across itself or emit polygon triangulation errors. Water skill previews should use flowing sheets/streams rather than generic circular energy rings.
 4. Verify water remains blue/cyan and translucent without washing out to a white blob. Test both before and after a renderer node enters the scene tree.
 5. T/G/Y/U/I/O preview reusable special-skill visual presets. These are presentation-only previews; gameplay damage/collision must be authored separately.
 6. Each element creates its own renderer at the resolved hit position.
