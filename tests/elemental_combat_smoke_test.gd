@@ -1,15 +1,17 @@
 extends SceneTree
 
 const EXECUTOR_SCRIPT = preload("res://scripts/combat/ability_executor.gd")
+const WORLD_ADAPTER_SCRIPT = preload("res://scripts/combat/world_adapter.gd")
+const COMBATANT_SCRIPT = preload("res://scripts/combat/combatant.gd")
 const RESOLVER_SCRIPT = preload("res://scripts/elements/interaction_resolver.gd")
 const ELEMENT_SCRIPT = preload("res://scripts/elements/element_definition.gd")
 
 func _initialize() -> void:
-	var executor: Node = EXECUTOR_SCRIPT.new()
-	root.add_child.call_deferred(executor)
-	call_deferred("_run_tests", executor)
+	call_deferred("_run_tests")
 
-func _run_tests(executor: Node) -> void:
+func _run_tests() -> void:
+	var executor = EXECUTOR_SCRIPT.new()
+	root.add_child(executor)
 	executor.register_default_elements()
 	assert(executor.has_element(&"lightning"))
 	assert(executor.has_element(&"wind"))
@@ -49,6 +51,33 @@ func _run_tests(executor: Node) -> void:
 	element.element_id = &"test_element"
 	assert(element.to_payload().get("element_id") == &"test_element")
 
+	var adapter = WORLD_ADAPTER_SCRIPT.new()
+	root.add_child(adapter)
+	var combatant = COMBATANT_SCRIPT.new()
+	combatant.combatant_id = &"dummy"
+	combatant.position = Vector2(24.0, 0.0)
+	root.add_child(combatant)
+	var world_result: Dictionary = adapter.execute_ability(
+		{
+			"ability_id": &"test_fire",
+			"element_id": &"fire",
+			"damage": 10.0,
+			"impulse": 0.0,
+			"max_range": 100.0
+		},
+		null,
+		[combatant]
+	)
+	assert(bool(world_result.get("accepted", false)))
+	assert(int(world_result.get("hit_count", 0)) == 1)
+	assert(combatant.current_health < combatant.max_health)
+	assert(combatant.has_status(&"burning"))
+
 	print("OVERDRIVE elemental combat smoke tests: PASS")
-	executor.queue_free()
+	root.remove_child(combatant)
+	combatant.free()
+	root.remove_child(adapter)
+	adapter.free()
+	root.remove_child(executor)
+	executor.free()
 	quit(0)
