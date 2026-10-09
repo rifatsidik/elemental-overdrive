@@ -49,6 +49,8 @@ func execute_ability(
 		var element_id := StringName(ability.get("element_id", &""))
 		var secondary_id := StringName(resolved_context.get("secondary_element_id", &""))
 		var chain_limit := executor.get_chain_budget(element_id, secondary_id, resolved_context)
+		if ability.has("max_targets"):
+			chain_limit = mini(chain_limit, maxi(1, int(ability.get("max_targets", 1))))
 		var chain_origin := origin
 		if not targets.is_empty() and is_instance_valid(targets[0]) and targets[0] is Node2D:
 			chain_origin = (targets[0] as Node2D).global_position
