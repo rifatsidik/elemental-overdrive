@@ -5,8 +5,8 @@ const CORE_SCRIPT = preload("res://scripts/core/overdrive_core.gd")
 const PERFORMANCE_SCRIPT = preload("res://scripts/performance/performance_director.gd")
 const ENERGY_BURST_SCRIPT = preload("res://scripts/visuals/energy_burst.gd")
 
-var core: Node
-var performance_director: Node
+var core: OverdriveCore
+var performance_director: OverdrivePerformanceDirector
 var burst_count: int = 0
 var _telemetry_timer: float = 0.0
 
@@ -46,7 +46,7 @@ func _spawn_demo_burst(origin: Vector2, strength: float) -> void:
     core.request_energy_burst(origin, strength)
 
 func _on_energy_burst_requested(origin: Vector2, strength: float, seed_value: int) -> void:
-    var burst: Node2D = ENERGY_BURST_SCRIPT.new()
+    var burst: EnergyBurst = ENERGY_BURST_SCRIPT.new()
     burst.position = origin
     burst.name = "EnergyBurst_%03d" % (burst_count + 1)
     add_child(burst)
