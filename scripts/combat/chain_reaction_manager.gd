@@ -14,9 +14,9 @@ func select_targets(
 	var available: Array[Dictionary] = []
 	var seen: Dictionary = {}
 	for candidate in candidates:
-		if not is_instance_valid(candidate) or not candidate is Node2D:
+		if not is_instance_valid(candidate) or not candidate is OverdriveCombatant:
 			continue
-		if candidate.has_method("get") and bool(candidate.get("is_defeated")):
+		if (candidate as OverdriveCombatant).is_defeated:
 			continue
 		var instance_id: int = candidate.get_instance_id()
 		if excluded_instance_ids.has(instance_id) or seen.has(instance_id):
