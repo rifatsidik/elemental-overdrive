@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-OVERDRIVE ENGINE is a reusable 2D real-time effects and elemental-combat foundation inside Godot, not a replacement for Godot and not the finished game. The Engine Lab remains an integration harness.
+OVERDRIVE ENGINE is a reusable 2D real-time effects and elemental-combat foundation inside Godot, not a replacement for Godot and not the finished game. The Engine Lab remains an integration harness. Element renderers are routed through a presentation-only consumer, separate from combat simulation.
 
 ## Target
 
@@ -56,7 +56,7 @@ Keep GL Compatibility as a conservative baseline. Evaluate renderer changes and 
 3. Combatant health/status and world adapter.
 4. Automated smoke tests in Godot 4.7.x.
 5. Collision-query integration and multi-hop chain graph with cycle guards.
-6. Wind, fire, and water renderers using the same event contract.
+6. Element VFX router and procedural wind, fire, and water renderers consuming combat hit events.
 7. Android landscape profiling, allocation/latency checks, and Low/Balanced/High tuning.
 
 ## Definition of done
