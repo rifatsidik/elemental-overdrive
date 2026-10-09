@@ -28,6 +28,10 @@ func configure(new_skill_id: StringName, new_seed: int, scale: float = 1.0, laye
 	lifetime = float(preset["lifetime"])
 	layer_budget = mini(clampi(layers, 1, 3), int(preset["layers"]))
 	tint = preset["color"]
+	# Keep water ribbons translucent; fire/wind retain additive energy glow.
+	var skill_material := CanvasItemMaterial.new()
+	skill_material.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX if String(skill_id).begins_with("water_") else CanvasItemMaterial.BLEND_MODE_ADD
+	material = skill_material
 	_seed = new_seed
 	_rng.seed = _seed
 	_particles.clear()
