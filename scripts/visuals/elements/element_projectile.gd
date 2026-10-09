@@ -63,18 +63,41 @@ func _draw() -> void:
 			_draw_wind(head, direction, normal, fade, t)
 
 func _draw_fire(head: Vector2, direction: Vector2, normal: Vector2, fade: float, t: float) -> void:
-	var length := (54.0 + 16.0 * sin(age * 58.0)) * strength
-	var width := 10.0 * strength
-	for layer in range(layer_budget + 1):
-		var offset := normal * sin(age * 32.0 + float(layer)) * 4.0 * strength
-		var tail := head - direction * length * (1.0 + float(layer) * 0.3) + offset
-		var alpha := fade * (0.28 / float(layer + 1))
-		draw_line(tail, head + offset, Color(1.0, 0.12 + float(layer) * 0.13, 0.015, alpha), width * (2.4 - float(layer) * 0.35), true)
-		draw_line(tail, head + offset, Color(1.0, 0.42 + float(layer) * 0.12, 0.04, alpha * 1.8), width * (0.95 - float(layer) * 0.12), true)
-	draw_line(head - direction * length * 1.05, head, Color(1.0, 0.25, 0.025, fade * 0.92), width * 1.2, true)
-	draw_line(head - direction * length * 0.72, head, Color(1.0, 0.92, 0.6, fade), width * 0.34, true)
-	draw_circle(head, 8.0 * strength * fade, Color(1.0, 0.72, 0.2, fade * 0.78))
-	draw_circle(head, 3.5 * strength * fade, Color(1.0, 1.0, 0.82, fade))
+	# A short turbulent flame mass trails the projectile head; no parallel laser streaks.
+	var length := (54.0 + 10.0 * sin(age * 31.0)) * strength
+	var width := (16.0 + 3.0 * sin(age * 27.0)) * strength
+	for layer in range(3):
+		var offset := normal * sin(age * 18.0 + float(layer) * 2.1) * 4.0 * strength
+		var base := head - direction * (3.0 + float(layer) * 3.0) + offset
+		var flame_dir := -direction
+		var phase := float(layer) * 1.7 + age * 3.0
+		var outer := _build_flame_shape(base, flame_dir, length * (1.0 - float(layer) * 0.17), width * (1.0 - float(layer) * 0.2), phase)
+		var inner := _build_flame_shape(base - direction * 2.0, flame_dir, length * (0.7 - float(layer) * 0.1), width * 0.48, phase + 0.8)
+		draw_colored_polygon(outer, Color(1.0, 0.13 + float(layer) * 0.06, 0.008, fade * 0.72))
+		draw_colored_polygon(inner, Color(1.0, 0.42 + 0.12 * sin(age * 23.0 + float(layer)), 0.025, fade * 0.9))
+	draw_circle(head, 7.0 * strength * fade, Color(1.0, 0.34, 0.025, fade * 0.72))
+	draw_circle(head, 3.0 * strength * fade, Color(1.0, 0.94, 0.62, fade * 0.96))
+	for i in range(5 + layer_budget):
+		var phase := age * 14.0 + float(i) * 2.4
+		var pos := head - direction * (10.0 + float(i) * 8.0) * strength + normal * sin(phase) * (5.0 + float(i)) * strength
+		var radius := (1.0 + float(i % 3) * 0.55) * strength * fade
+		draw_circle(pos, radius, Color(1.0, 0.72 - float(i % 2) * 0.18, 0.18, fade * 0.9))
+
+func _build_flame_shape(base: Vector2, direction: Vector2, length: float, half_width: float, phase: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var normal := Vector2(-direction.y, direction.x)
+	var segments := 12
+	for i in range(segments + 1):
+		var u := float(i) / float(segments)
+		var shape_width := half_width * pow(1.0 - u, 0.78) * (0.82 + 0.18 * sin(u * PI * 3.0 + phase))
+		var sway := sin(u * 7.0 + phase + age * 18.0) * half_width * 0.2 * u
+		points.append(base + direction * length * u + normal * (sway + shape_width))
+	for i in range(segments, -1, -1):
+		var u := float(i) / float(segments)
+		var shape_width := half_width * pow(1.0 - u, 0.78) * (0.82 + 0.18 * sin(u * PI * 3.0 + phase))
+		var sway := sin(u * 7.0 + phase + age * 18.0) * half_width * 0.2 * u
+		points.append(base + direction * length * u + normal * (sway - shape_width))
+	return points
 
 func _draw_water(head: Vector2, direction: Vector2, normal: Vector2, fade: float, t: float) -> void:
 	# A moving volume of liquid, not a stack of laser-like lines.
