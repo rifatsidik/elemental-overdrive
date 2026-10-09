@@ -1,79 +1,67 @@
-# OVERDRIVE ENGINE — Technical Architecture v1.1
+# OVERDRIVE ENGINE — Technical Architecture v1.2
 
 ## Product boundary
 
-OVERDRIVE ENGINE is a reusable 2D real-time effects and elemental-combat foundation inside Godot, not a replacement for Godot and not the finished game. The Engine Lab is an integration harness, not a gameplay prototype.
+OVERDRIVE ENGINE is a reusable 2D real-time effects and elemental-combat foundation inside Godot, not a replacement for Godot and not the finished game. The Engine Lab remains an integration harness.
 
 ## Target
 
 - Primary: Android landscape.
 - Secondary: desktop editor iteration.
 - Visual target: hybrid high-end, with scalable procedural effects.
-- Initial performance objective: 60 FPS where device budget permits, with a 30 FPS fallback target on constrained devices. These are goals, not measured claims.
+- Initial objective: 60 FPS where device budget permits, with a 30 FPS fallback goal on constrained devices. These are not measured claims.
 
-## Module contracts
+## Runtime modules
 
-### Core
+### Core and elemental definitions
 
-Owns shared effect time, seeded randomness, common effect parameters, and event contracts. It must not depend on actors or gameplay scenes.
+Core owns shared effect timing and event contracts. Element definitions own stable identity, visual palette, gameplay multipliers, status metadata, tags, and chain budgets. Definitions contain data only.
 
-### Element definitions
+### Ability executor and interaction resolver
 
-`scripts/elements/element_definition.gd` defines a data-only element: stable ID, display name, visual color, damage/impulse scales, status metadata, tags, and a chain-target budget. The definition describes an element; it does not execute gameplay or render effects.
+The executor validates ability requests, enforces per-caster cooldowns, calculates damage/impulse modifiers, and returns structured results. The resolver is deterministic pair-based rule logic. Neither performs physics queries, mutates health, nor spawns visual effects.
 
-### Ability executor
+### Combatant and status controller
 
-`scripts/combat/ability_executor.gd` validates data-driven ability requests, enforces a basic per-caster ability cooldown, applies element/reaction modifiers, caps and de-duplicates requested target IDs, and emits a structured result. It does **not** own hit detection, health, target distance, body impulses, or VFX spawning. Those responsibilities belong to a future world/gameplay adapter.
+Combatants own health, defeat state, status controller, and an impulse adapter for `RigidBody2D` / `CharacterBody2D`. Statuses have explicit lifetime behavior; burning currently applies periodic damage, while other elemental states are timed markers. This keeps status gameplay out of the renderer.
 
-### Interaction resolver
+### Chain reaction manager
 
-`scripts/elements/interaction_resolver.gd` resolves element pairs into deterministic reaction metadata. Initial pairs cover fire + wind, fire + water, lightning + water, water + wind, and lightning + wind. Reaction fan-out is capped; the future chain manager must also prevent repeated visits/cycles.
+Selects nearest candidates within a bounded radius and excludes already-hit/duplicate instances. It does not apply damage. Any future multi-hop chain system must use a visited set, per-cast event budget, and a depth limit.
 
-### Combat/world adapter (future)
+### Combat world adapter
 
-Owns authoritative collision and target validation, damage/status application, physics impulses, environmental changes, and chain traversal. It consumes executor results and applies them to actual world objects.
+Receives candidate targets from the game's raycast, overlap query, projectile collision, or other physics system. It filters invalid/defeated/duplicate/out-of-range combatants, asks the executor for the simulation result, applies damage/status/impulse, and emits hit/reaction signals for presentation. It never scans the entire scene to discover targets.
 
-### Energy renderer
+### Energy renderer and particle system
 
-Owns procedural 2D energy geometry: branching lightning, arcs, plasma ribbons, beams, and shockwave outlines. Geometry is generated at bounded complexity and uses stable inputs when repeatability is needed.
-
-### Particle system
-
-Owns short-lived sparks, debris, dust, and trails. Particle counts and lifetimes are bounded, with simpler fallback behavior for low-end hardware.
-
-### Impact & physics
-
-Gameplay-relevant impulses and collision responses must be explicit and separate from decorative camera/visual impulses. VFX may communicate force but must not silently change simulation outcomes.
+Own procedural lightning, arcs, plasma ribbons, beams, shockwaves, sparks, debris, and trails. Geometry, particle counts, and line layers must be bounded and scalable.
 
 ### Performance director
 
-Exposes Low, Balanced, and High presets. Quality reduces presentation complexity (particles, branches, line layers, lights), not damage, status durations, collision, or reaction rules.
+Exposes Low, Balanced, and High presets. Quality changes presentation complexity only, not damage, collision, status duration, or reaction rules. Measure actual frame time and allocations before tuning thresholds for a specific Android device.
 
 ### Engine Lab
 
-Contains isolated demos, controls, and simple telemetry. Elemental contracts currently have a separate manual test plan; they are not yet wired to a real actor/world adapter.
+Currently demonstrates procedural energy VFX and quality controls. Combat modules have a headless smoke test, but are not yet connected to a playable enemy arena or the visual lab UI.
 
-## Renderer decision
+## Renderer policy
 
-Keep the project's existing GL Compatibility configuration as a conservative baseline. Evaluate other Godot renderers and HDR/glow on the actual Godot 4.7.x installation and target Android devices before changing defaults.
+Keep GL Compatibility as a conservative baseline. Evaluate renderer changes and HDR/glow on the actual Godot 4.7.x installation and target Android devices before changing defaults.
 
-Reference: https://docs.godotengine.org/en/4.7/engine_details/architecture/internal_rendering_architecture.html
+## Milestones
 
-## Testable milestones
+1. Lab boot and procedural energy.
+2. Element definitions, ability execution, and deterministic reactions.
+3. Combatant health/status and world adapter.
+4. Automated smoke tests in Godot 4.7.x.
+5. Collision-query integration and multi-hop chain graph with cycle guards.
+6. Wind, fire, and water renderers using the same event contract.
+7. Android landscape profiling, allocation/latency checks, and Low/Balanced/High tuning.
 
-1. **Lab boot** — project opens and runs the visual engine lab.
-2. **Core contract** — effect clock and seeded randomness are reusable.
-3. **Procedural energy** — click/tap spawns bounded lightning and impact effects.
-4. **Quality director** — presets change visual budgets; telemetry is visible.
-5. **Elemental foundation** — definitions, ability execution, cooldowns, and pair-based reaction resolution.
-6. **World adapter** — collision validation, authoritative damage/status, impulse, and bounded chain traversal.
-7. **Element renderers** — wind, fire, and water renderers use the same ability/event contract as lightning.
-8. **Android validation** — measure frame time, allocations, input latency, and simultaneous-effect load on real landscape devices.
+## Definition of done
 
-## Definition of done per change
-
-- One coherent subsystem or integration step.
-- No dependency on a specific game's progression.
-- Manual test steps documented.
-- Godot 4.7.x parser/runtime checks are reported only after actually running the project.
-- Performance targets are reported only after measurements on target hardware.
+- Manual/automated tests documented and actually run before claiming success.
+- No hidden gameplay changes caused by VFX quality.
+- No unbounded target fan-out or status/effect lifetime growth.
+- Runtime and Android performance claims supported by recorded test results.
