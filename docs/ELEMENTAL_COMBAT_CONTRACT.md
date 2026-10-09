@@ -5,7 +5,7 @@
 - **ElementDefinition** is data only: identity, color, damage/impulse scales, status, chain budget, and tags.
 - **AbilityExecutor** validates ability requests, enforces cooldowns, resolves modifiers, and emits structured simulation results. It does not perform collision queries or mutate combatants.
 - **InteractionResolver** returns deterministic reaction metadata and never mutates the world.
-- **Combatant** owns health, defeat state, timed statuses, and an adapter for physical impulse.
+- **Combatant** owns health, defeat state, timed statuses, and forwards impulses to an attached or explicitly assigned physics body.
 - **StatusController** owns status lifetime and explicitly defined status behavior. In this iteration, burning deals periodic damage; soaked, charged, staggered, and steamed are timed markers.
 - **ChainReactionManager** selects nearest valid chain candidates with duplicate/range/count guards. It does not apply damage.
 - **CombatWorldAdapter** applies executor results to candidate combatants supplied by the caller. It does not search the entire scene for targets.
