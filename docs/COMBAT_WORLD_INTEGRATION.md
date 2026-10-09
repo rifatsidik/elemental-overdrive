@@ -34,7 +34,7 @@ var result := adapter.execute_ability(
 )
 ```
 
-Use the returned `hits` array for feedback/telemetry and the `reaction_triggered` signal for VFX/audio. Renderers must not change the simulation result. Chain candidates are selected nearest-first, then filtered again by the executor's element/reaction target budget.
+Use the returned `hits` array for feedback/telemetry and the `reaction_triggered` signal for VFX/audio. Renderers must not change the simulation result. Chain candidates are selected nearest-first and the combined direct-plus-chain target count is kept within the executor's element/reaction target budget.
 
 ## Status behavior
 
