@@ -141,21 +141,26 @@ func _draw_water_burst(progress: float, fade: float) -> void:
 	for i in range(2, 23):
 		crest_line.append(sheet[i] + Vector2(0.0, 2.0 * strength))
 	draw_polyline(crest_line, Color(0.48, 0.85, 1.0, fade * 0.9), 2.0 * strength, true)
-	# Spray fingers have independent phases, lengths and curved tips.
-	for i in range(5 + layer_budget * 2):
-		var u := float(i) / float(4 + layer_budget * 2)
+	# A few compact, thick curls; the broad sheet and droplets carry the splash.
+	for i in range(3 + layer_budget):
+		var u := float(i) / float(2 + layer_budget)
 		var side := lerpf(-1.0, 1.0, u)
 		var base := Vector2(side * width * 0.7, 1.0)
-		var h := (38.0 + 30.0 * sin(age * 8.0 + float(i) * 1.7)) * strength
-		var control := base + Vector2(side * h * 0.24, -h)
-		var tip := base + Vector2(side * h * 0.58 + sin(age * 13.0 + float(i)) * 4.0, -h * 0.28)
+		var h := (24.0 + 14.0 * sin(age * 8.0 + float(i) * 1.7)) * strength
+		var control := base + Vector2(side * h * 0.2, -h * 0.78)
+		var tip := base + Vector2(side * h * 0.36 + sin(age * 13.0 + float(i)) * 2.0, -h * 0.3)
 		var curve := PackedVector2Array()
 		for step in range(13):
 			var t := float(step) / 12.0
 			var q := 1.0 - t
 			curve.append(base * q * q + control * 2.0 * q * t + tip * t * t)
-		draw_polyline(curve, Color(0.02, 0.47, 0.78, fade * 0.92), 4.0 * strength, true)
-		draw_polyline(curve, Color(0.72, 0.95, 1.0, fade * 0.86), 1.2 * strength, true)
+		draw_polyline(curve, Color(0.015, 0.22, 0.55, fade * 0.88), 8.0 * strength, true)
+		draw_polyline(curve, Color(0.02, 0.5, 0.82, fade * 0.94), 4.5 * strength, true)
+		var glint := PackedVector2Array()
+		for glint_index in range(3, 7):
+			glint.append(curve[glint_index])
+		draw_polyline(glint, Color(0.72, 0.95, 1.0, fade * 0.84), 1.2 * strength, true)
+		draw_circle(tip, 2.5 * strength, Color(0.42, 0.8, 0.98, fade * 0.9))
 	# Outward droplets arc down under gravity; they are not uniform radial rays.
 	for particle in _particles:
 		var angle: float = float(particle["angle"])
