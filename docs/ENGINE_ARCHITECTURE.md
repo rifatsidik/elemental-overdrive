@@ -1,62 +1,79 @@
-# OVERDRIVE ENGINE — Technical Architecture v1.0
+# OVERDRIVE ENGINE — Technical Architecture v1.1
 
 ## Product boundary
 
-OVERDRIVE ENGINE is a reusable 2D real-time effects framework inside Godot, not a replacement for Godot and not the survivor game itself. The main scene is an Engine Lab where individual systems can be inspected without enemies, upgrades, progression, or combat rules.
+OVERDRIVE ENGINE is a reusable 2D real-time effects and elemental-combat foundation inside Godot, not a replacement for Godot and not the finished game. The Engine Lab is an integration harness, not a gameplay prototype.
 
 ## Target
 
 - Primary: Android landscape.
 - Secondary: desktop editor iteration.
-- Visual target: hybrid high-end; rich procedural energy effects with adjustable complexity.
+- Visual target: hybrid high-end, with scalable procedural effects.
 - Initial performance objective: 60 FPS where device budget permits, with a 30 FPS fallback target on constrained devices. These are goals, not measured claims.
 
 ## Module contracts
 
 ### Core
+
 Owns shared effect time, seeded randomness, common effect parameters, and event contracts. It must not depend on actors or gameplay scenes.
 
-### Energy Renderer
+### Element definitions
+
+`scripts/elements/element_definition.gd` defines a data-only element: stable ID, display name, visual color, damage/impulse scales, status metadata, tags, and a chain-target budget. The definition describes an element; it does not execute gameplay or render effects.
+
+### Ability executor
+
+`scripts/combat/ability_executor.gd` validates data-driven ability requests, enforces a basic per-caster ability cooldown, applies element/reaction modifiers, caps and de-duplicates requested target IDs, and emits a structured result. It does **not** own hit detection, health, target distance, body impulses, or VFX spawning. Those responsibilities belong to a future world/gameplay adapter.
+
+### Interaction resolver
+
+`scripts/elements/interaction_resolver.gd` resolves element pairs into deterministic reaction metadata. Initial pairs cover fire + wind, fire + water, lightning + water, water + wind, and lightning + wind. Reaction fan-out is capped; the future chain manager must also prevent repeated visits/cycles.
+
+### Combat/world adapter (future)
+
+Owns authoritative collision and target validation, damage/status application, physics impulses, environmental changes, and chain traversal. It consumes executor results and applies them to actual world objects.
+
+### Energy renderer
+
 Owns procedural 2D energy geometry: branching lightning, arcs, plasma ribbons, beams, and shockwave outlines. Geometry is generated at bounded complexity and uses stable inputs when repeatability is needed.
 
-### Particle System
-Owns short-lived sparks, debris, dust, and trails. Particle counts and lifetimes are bounded. Use GPUParticles2D where supported and useful; retain a simpler fallback path for low-end hardware.
+### Particle system
 
-### Impact & Physics
-Gameplay-relevant impulses and collision responses must be explicit and separate from purely decorative camera/visual impulses. VFX may communicate force but must not silently change simulation outcomes.
+Owns short-lived sparks, debris, dust, and trails. Particle counts and lifetimes are bounded, with simpler fallback behavior for low-end hardware.
 
-### Animation
-Provides reusable envelopes for anticipation, peak, and follow-through, plus procedural motion helpers. Timing is parameterized rather than embedded in one effect.
+### Impact & physics
 
-### Light & Color
-Owns palettes, flashes, aura layers, and optional scene glow. Glow/HDR must be configurable because screen-space post-processing has a cost on mobile.
+Gameplay-relevant impulses and collision responses must be explicit and separate from decorative camera/visual impulses. VFX may communicate force but must not silently change simulation outcomes.
 
-### Performance Director
-Exposes Low, Balanced, and High presets. Quality changes should reduce effect complexity independently: particle budget, lightning branches, line layers, and active light count. Record FPS and active effect counts; never claim targets are met without device measurements.
+### Performance director
+
+Exposes Low, Balanced, and High presets. Quality reduces presentation complexity (particles, branches, line layers, lights), not damage, status durations, collision, or reaction rules.
 
 ### Engine Lab
-Contains isolated demos, controls, and simple telemetry. The lab is an integration harness, not a gameplay prototype.
+
+Contains isolated demos, controls, and simple telemetry. Elemental contracts currently have a separate manual test plan; they are not yet wired to a real actor/world adapter.
 
 ## Renderer decision
 
-Start with the project's existing GL Compatibility configuration for the first minimal demo. Godot 4.7 documents Mobile as optimized for mobile GPUs and supports HDR 2D, while Compatibility targets broader/older hardware and lacks some advanced rendering capabilities. We will test a Mobile renderer branch after the baseline is stable, then choose the default based on actual target devices. Do not enable HDR/glow globally until measured.
+Keep the project's existing GL Compatibility configuration as a conservative baseline. Evaluate other Godot renderers and HDR/glow on the actual Godot 4.7.x installation and target Android devices before changing defaults.
 
 Reference: https://docs.godotengine.org/en/4.7/engine_details/architecture/internal_rendering_architecture.html
 
 ## Testable milestones
 
-1. **Lab boot** — project opens and runs the engine lab.
-2. **Core contract** — effect clock and deterministic seed are reusable.
-3. **Procedural energy** — click/tap spawns bounded lightning and shockwave effects.
-4. **Quality director** — presets change geometry/particle budgets; telemetry is visible.
-5. **Motion and impact** — envelope and impulse demos, isolated from gameplay.
-6. **Renderer evaluation** — compare Compatibility and Mobile on desktop and real Android hardware.
-7. **Particle and lighting layers** — add bounded particles and optional glow after measurement.
+1. **Lab boot** — project opens and runs the visual engine lab.
+2. **Core contract** — effect clock and seeded randomness are reusable.
+3. **Procedural energy** — click/tap spawns bounded lightning and impact effects.
+4. **Quality director** — presets change visual budgets; telemetry is visible.
+5. **Elemental foundation** — definitions, ability execution, cooldowns, and pair-based reaction resolution.
+6. **World adapter** — collision validation, authoritative damage/status, impulse, and bounded chain traversal.
+7. **Element renderers** — wind, fire, and water renderers use the same ability/event contract as lightning.
+8. **Android validation** — measure frame time, allocations, input latency, and simultaneous-effect load on real landscape devices.
 
-## Definition of done per commit
+## Definition of done per change
 
-- One coherent subsystem or scene change.
-- No survivor gameplay dependency.
-- Godot 4.7.x project opens without script parse errors.
+- One coherent subsystem or integration step.
+- No dependency on a specific game's progression.
 - Manual test steps documented.
-- Runtime verification is only claimed after actually running the project.
+- Godot 4.7.x parser/runtime checks are reported only after actually running the project.
+- Performance targets are reported only after measurements on target hardware.
