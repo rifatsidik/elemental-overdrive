@@ -6,7 +6,7 @@ class_name OverdrivePerformanceDirector
 
 enum Quality { LOW, BALANCED, HIGH }
 
-var quality: Quality = Quality.BALANCED
+var quality: int = Quality.BALANCED
 var adaptive_enabled: bool = true
 var fps_average: float = 0.0
 var frame_time_ms: float = 0.0
@@ -51,16 +51,16 @@ func _process(delta: float) -> void:
     _decision_timer = 0.0
 
     if _low_fps_time >= 1.6 and quality != Quality.LOW:
-        set_quality(Quality(maxi(0, int(quality) - 1)))
+        set_quality(maxi(Quality.LOW, quality - 1))
         _low_fps_time = 0.0
         _high_fps_time = 0.0
     elif _high_fps_time >= 5.0 and quality != Quality.HIGH:
-        set_quality(Quality(mini(2, int(quality) + 1)))
+        set_quality(mini(Quality.HIGH, quality + 1))
         _low_fps_time = 0.0
         _high_fps_time = 0.0
 
-func set_quality(next_quality: Quality) -> void:
-    quality = next_quality
+func set_quality(next_quality: int) -> void:
+    quality = clampi(next_quality, Quality.LOW, Quality.HIGH)
 
 func set_adaptive(enabled: bool) -> void:
     adaptive_enabled = enabled
