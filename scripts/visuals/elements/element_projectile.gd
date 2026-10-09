@@ -33,9 +33,9 @@ func configure(new_element: StringName, destination_offset: Vector2, new_strengt
 	queue_redraw()
 
 func _ready() -> void:
-	var additive := CanvasItemMaterial.new()
-	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	material = additive
+	var projectile_material := CanvasItemMaterial.new()
+	projectile_material.blend_mode = CanvasItemMaterial.BLEND_MODE_MIX if element_id == &"water" else CanvasItemMaterial.BLEND_MODE_ADD
+	material = projectile_material
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -77,24 +77,61 @@ func _draw_fire(head: Vector2, direction: Vector2, normal: Vector2, fade: float,
 	draw_circle(head, 3.5 * strength * fade, Color(1.0, 1.0, 0.82, fade))
 
 func _draw_water(head: Vector2, direction: Vector2, normal: Vector2, fade: float, t: float) -> void:
-	var tail_length := (78.0 + 18.0 * sin(age * 45.0)) * strength
-	var tail := head - direction * tail_length
-	var wave := sin(age * 37.0 + float(_seed % 19)) * 5.0 * strength
-	var width := (8.0 + 4.0 * sin(age * 24.0)) * strength
-	# Broad liquid body, two flowing ribbons, and a bright pressurized core.
-	draw_line(tail, head, Color(0.015, 0.18, 1.0, fade * 0.22), width * 4.4, true)
-	draw_line(tail + normal * wave, head, Color(0.02, 0.46, 1.0, fade * 0.62), width * 2.0, true)
-	draw_line(tail - normal * wave, head, Color(0.0, 0.82, 1.0, fade * 0.76), width * 1.3, true)
-	draw_line(tail + normal * wave * 0.35, head, Color(0.82, 0.98, 1.0, fade * 0.96), width * 0.38, true)
+	# A moving volume of liquid, not a stack of laser-like lines.
+	var length := (92.0 + 12.0 * sin(age * 19.0)) * strength
+	var width := (17.0 + 3.5 * sin(age * 24.0)) * strength
+	var surface := PackedVector2Array()
+	var inner_surface := PackedVector2Array()
+	var lower_surface := PackedVector2Array()
+	var samples := 18
+	for i in range(samples + 1):
+		var u := float(i) / float(samples)
+		var taper := pow(maxf(0.015, 1.0 - u), 0.62)
+		var pulse := 0.82 + 0.18 * sin(u * 13.0 - age * 34.0 + float(_seed % 17))
+		var ripple := sin(u * 18.0 - age * 41.0) * 2.2 * strength
+		var center := head - direction * length * u
+		var half_width := width * taper * pulse
+		surface.append(center + normal * (half_width + ripple))
+		inner_surface.append(center + normal * (half_width * 0.56 + ripple * 0.45))
+		lower_surface.append(center - normal * (half_width * 0.78 - ripple * 0.55))
+	var body := PackedVector2Array()
+	for point in surface:
+		body.append(point)
+	for i in range(lower_surface.size() - 1, -1, -1):
+		body.append(lower_surface[i])
+	draw_colored_polygon(body, Color(0.015, 0.23, 0.72, fade * 0.78))
+	# Cyan translucent body sits inside the deep-blue silhouette.
+	var inner_body := PackedVector2Array()
+	for point in inner_surface:
+		inner_body.append(point)
+	for i in range(lower_surface.size() - 1, -1, -1):
+		var center: Vector2 = lower_surface[i]
+		var upper: Vector2 = inner_surface[i]
+		inner_body.append(center.lerp(upper, 0.62))
+	draw_colored_polygon(inner_body, Color(0.02, 0.58, 0.91, fade * 0.78))
+	# A broken specular line follows the turbulent liquid surface.
+	var highlight := PackedVector2Array()
+	for i in range(2, inner_surface.size() - 2):
+		if i % 5 != 0:
+			highlight.append(inner_surface[i] - normal * (1.4 * strength))
+	if highlight.size() > 1:
+		draw_polyline(highlight, Color(0.78, 0.96, 1.0, fade * 0.92), 1.8 * strength, true)
+	# Detached droplets and bubbles move at different speeds around the stream.
 	for i in range(_droplet_offsets.size()):
 		var offset: Vector2 = _droplet_offsets[i]
-		var along := fposmod(float(i) * 0.173 + age * 5.5, 1.0)
-		var pos := head - direction * along * tail_length + normal * offset.x * (13.0 + 7.0 * sin(age * 29.0 + float(i))) * strength
-		var radius := (1.4 + absf(offset.y) * 2.8) * strength * fade
-		draw_line(pos - direction * radius * 3.0, pos, Color(0.12, 0.6, 1.0, fade * 0.55), radius, true)
-		draw_circle(pos, radius, Color(0.72, 0.96, 1.0, fade * 0.85))
-	draw_circle(head, 10.0 * strength * fade, Color(0.06, 0.56, 1.0, fade * 0.42))
-	draw_circle(head, 4.5 * strength * fade, Color(0.92, 1.0, 1.0, fade))
+		var along := fposmod(float(i) * 0.173 + age * (2.0 + absf(offset.y)), 1.0)
+		var center := head - direction * along * length
+		var spread := (width * 0.78 + absf(offset.x) * 13.0 * strength)
+		var pos := center + normal * offset.x * spread + Vector2(0.0, sin(age * 18.0 + float(i)) * 3.0)
+		var radius := (1.2 + absf(offset.y) * 2.1) * strength * fade
+		if i % 3 == 0:
+			draw_arc(pos, radius * 1.2, 0.0, TAU, 12, Color(0.48, 0.84, 1.0, fade * 0.68), maxf(1.0, radius * 0.55), true)
+		else:
+			draw_circle(pos, radius, Color(0.24, 0.72, 0.96, fade * 0.88))
+			draw_circle(pos - normal * radius * 0.25, radius * 0.3, Color(0.92, 0.99, 1.0, fade * 0.8))
+	# Rounded pressure head: avoid the artificial glowing ball look.
+	draw_circle(head, 8.0 * strength * fade, Color(0.04, 0.42, 0.84, fade * 0.9))
+	draw_circle(head - direction * 2.0 + normal * 1.0, 4.0 * strength * fade, Color(0.78, 0.97, 1.0, fade * 0.96))
 
 func _draw_wind(head: Vector2, direction: Vector2, normal: Vector2, fade: float, t: float) -> void:
 	# A traveling sword-like crescent, not a circular explosion.
