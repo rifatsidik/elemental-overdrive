@@ -1,7 +1,7 @@
 extends Node2D
 class_name OverdriveWaterBurst
 
-## Dynamic liquid impact: a broad water sheet, curling jets, surface ripples and ballistic droplets.
+## Dynamic liquid impact: one broad water sheet, surface ripples and round ballistic droplets.
 ## This renderer is presentation-only; combat damage and physics are owned by the world adapter.
 var age: float = 0.0
 var lifetime: float = 1.05
@@ -10,9 +10,6 @@ var layer_budget: int = 2
 var tint: Color = Color(0.06, 0.42, 0.86, 1.0)
 var _droplet_velocities: Array[Vector2] = []
 var _droplet_sizes: PackedFloat32Array = PackedFloat32Array()
-var _jet_angles: PackedFloat32Array = PackedFloat32Array()
-var _jet_heights: PackedFloat32Array = PackedFloat32Array()
-var _jet_sides: PackedFloat32Array = PackedFloat32Array()
 var _rng := RandomNumberGenerator.new()
 
 func configure(new_strength: float, seed_value: int, layers: int, color: Color = Color(0.06, 0.42, 0.86, 1.0)) -> void:
@@ -22,18 +19,11 @@ func configure(new_strength: float, seed_value: int, layers: int, color: Color =
 	_rng.seed = seed_value
 	_droplet_velocities.clear()
 	_droplet_sizes.clear()
-	_jet_angles.clear()
-	_jet_heights.clear()
-	_jet_sides.clear()
 	for i in range(12 + layer_budget * 5):
 		var angle := _rng.randf_range(-PI * 0.88, -PI * 0.12)
 		var speed := _rng.randf_range(70.0, 260.0)
 		_droplet_velocities.append(Vector2.from_angle(angle) * speed + Vector2(_rng.randf_range(-45.0, 45.0), -_rng.randf_range(15.0, 100.0)))
 		_droplet_sizes.append(_rng.randf_range(1.5, 4.6))
-	for i in range(3 + layer_budget):
-		_jet_angles.append(_rng.randf_range(-PI * 0.94, -PI * 0.06))
-		_jet_heights.append(_rng.randf_range(24.0, 58.0))
-		_jet_sides.append(_rng.randf_range(0.82, 1.22))
 	age = 0.0
 	queue_redraw()
 
@@ -101,31 +91,6 @@ func _draw() -> void:
 	if sheet_glint.size() > 1:
 		draw_polyline(sheet_glint, Color(0.56, 0.9, 1.0, fade * 0.86), 1.6 * strength, true)
 
-	# A few short, thick curls add splash shape without long grass-like spikes.
-	for i in range(_jet_angles.size()):
-		var angle: float = _jet_angles[i]
-		var height: float = _jet_heights[i] * strength * (1.0 - collapse * 0.48)
-		var side := Vector2(cos(angle), sin(angle))
-		var base := Vector2(side.x * half_width * 0.62, 7.0)
-		var control := base + Vector2(side.x * height * 0.22, -height * 0.76)
-		var tip := base + Vector2(side.x * height * 0.36, -height * 0.28)
-		tip.x *= _jet_sides[i]
-		var curve := PackedVector2Array()
-		for step in range(15):
-			var t := float(step) / 14.0
-			var q := 1.0 - t
-			var point := base * q * q + control * 2.0 * q * t + tip * t * t
-			point.x += sin(t * PI * 2.0 + age * 12.0 + float(i)) * 2.2 * strength
-			curve.append(point)
-		var jet_alpha := fade * (1.0 - float(i % 3) * 0.13)
-		draw_polyline(curve, Color(0.015, 0.2, 0.52, jet_alpha * 0.9), 9.0 * strength, true)
-		draw_polyline(curve, Color(0.03, 0.52, 0.84, jet_alpha), 5.2 * strength, true)
-		var short_glint := PackedVector2Array()
-		for glint_index in range(3, 7):
-			short_glint.append(curve[glint_index])
-		draw_polyline(short_glint, Color(0.68, 0.94, 1.0, jet_alpha * 0.8), 1.2 * strength, true)
-		draw_circle(tip, 2.8 * strength, Color(0.48, 0.82, 0.98, jet_alpha))
-
 	# Unevenly timed ripples spread across the surface instead of concentric sci-fi rings.
 	for i in range(layer_budget + 1):
 		var ring_t := clampf(age / (0.38 + float(i) * 0.13), 0.0, 1.0)
@@ -144,14 +109,11 @@ func _draw() -> void:
 				ripple_glint.append(ripple[j])
 			draw_polyline(ripple_glint, Color(0.72, 0.94, 1.0, alpha * 0.9), 1.1 * strength, true)
 
-	# Droplets follow ballistic arcs; elongated tails are aligned with their actual motion.
+	# Detached rounded droplets follow ballistic arcs; no needle-like trails.
 	for i in range(_droplet_velocities.size()):
 		var velocity: Vector2 = _droplet_velocities[i]
 		var position := velocity * age + Vector2(0.0, 260.0 * age * age)
-		var current_velocity := velocity + Vector2(0.0, 520.0 * age)
 		var radius: float = _droplet_sizes[i] * strength * fade
-		var tail := position - current_velocity.normalized() * (4.0 + current_velocity.length() * 0.018)
-		draw_line(tail, position, Color(0.02, 0.24, 0.6, fade * 0.55), maxf(1.0, radius * 0.95), true)
 		draw_circle(position, radius, Color(0.12, 0.53, 0.82, fade * 0.94))
 		draw_circle(position - Vector2(radius * 0.22, radius * 0.3), radius * 0.34, Color(0.88, 0.98, 1.0, fade * 0.9))
 
