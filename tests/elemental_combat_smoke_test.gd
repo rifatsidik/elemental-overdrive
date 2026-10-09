@@ -23,7 +23,8 @@ func _run_tests() -> void:
 		"element_id": &"lightning",
 		"damage": 10.0,
 		"impulse": 5.0,
-		"cooldown": 1.0
+		"cooldown": 1.0,
+		"chain": true
 	}
 	var result: Dictionary = executor.execute_ability(ability, {
 		"caster_id": &"test_caster",
