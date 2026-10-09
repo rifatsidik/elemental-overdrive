@@ -128,7 +128,10 @@ func _draw() -> void:
 		var alpha := (1.0 - ring_t) * fade * (0.72 / float(i + 1))
 		draw_polyline(ripple, Color(0.18, 0.58, 0.84, alpha), maxf(1.0, 2.2 - float(i) * 0.3), true)
 		if i == 0:
-			draw_polyline(ripple.slice(3, 13), Color(0.72, 0.94, 1.0, alpha * 0.9), 1.1 * strength, true)
+			var ripple_glint := PackedVector2Array()
+			for j in range(3, 13):
+				ripple_glint.append(ripple[j])
+			draw_polyline(ripple_glint, Color(0.72, 0.94, 1.0, alpha * 0.9), 1.1 * strength, true)
 
 	# Droplets follow ballistic arcs; elongated tails are aligned with their actual motion.
 	for i in range(_droplet_velocities.size()):
