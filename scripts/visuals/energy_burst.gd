@@ -33,7 +33,7 @@ func configure(new_strength: float, new_seed: int, branches: int, layers: int) -
     age = 0.0
     _build_paths()
 
-    var sparks: Node2D = PARTICLE_SCRIPT.new()
+    var sparks = PARTICLE_SCRIPT.new()
     sparks.name = "EnergyParticles"
     add_child(sparks)
     sparks.configure(seed_value ^ 0x5F3759DF, 12 + layer_budget * 12, strength)
@@ -145,16 +145,16 @@ func _draw() -> void:
             var jitter := Vector2(wave * (2.0 + layer_budget) * fade, cos(age * 51.0 + float(path_index)) * 2.2 * fade)
             var aa := a + jitter
             var bb := b - jitter * 0.7
-            var scale := 1.0 if is_main else 0.46
+            var branch_scale := 1.0 if is_main else 0.46
             var flicker := 0.72 + 0.28 * absf(sin(age * 97.0 + float(path_index * 17)))
             var hot := fade * flicker
 
-            draw_line(aa, bb, Color(0.015, 0.12, 1.0, 0.12 * hot), 28.0 * scale * strength, true)
-            draw_line(aa, bb, Color(0.0, 0.52, 1.0, 0.20 * hot), 18.0 * scale * strength, true)
-            draw_line(aa, bb, Color(0.0, 1.0, 0.96, 0.34 * hot), 10.0 * scale * strength, true)
+            draw_line(aa, bb, Color(0.015, 0.12, 1.0, 0.12 * hot), 28.0 * branch_scale * strength, true)
+            draw_line(aa, bb, Color(0.0, 0.52, 1.0, 0.20 * hot), 18.0 * branch_scale * strength, true)
+            draw_line(aa, bb, Color(0.0, 1.0, 0.96, 0.34 * hot), 10.0 * branch_scale * strength, true)
             if layer_budget >= 2:
-                draw_line(aa, bb, Color(0.70, 1.0, 1.0, 0.72 * hot), 4.6 * scale * strength, true)
-            draw_line(aa, bb, Color(1.0, 1.0, 1.0, hot), 1.8 * scale * strength, true)
+                draw_line(aa, bb, Color(0.70, 1.0, 1.0, 0.72 * hot), 4.6 * branch_scale * strength, true)
+            draw_line(aa, bb, Color(1.0, 1.0, 1.0, hot), 1.8 * branch_scale * strength, true)
 
             if layer_budget >= 3 and segment_index % 3 == 0 and age < 0.30:
                 var mid := aa.lerp(bb, 0.58)
