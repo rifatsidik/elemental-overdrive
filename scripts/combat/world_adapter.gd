@@ -127,6 +127,7 @@ func execute_ability(
 		hits.append(hit)
 		hit_applied.emit(caster, target, hit)
 
+	result["origin"] = origin
 	result["hits"] = hits
 	result["hit_count"] = hits.size()
 	ability_resolved.emit(result)
