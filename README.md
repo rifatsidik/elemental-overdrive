@@ -8,37 +8,33 @@ This repository builds the **engine lab and reusable engine systems**, not a fin
 
 ## Architecture
 
-See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md) for the engine overview and [docs/ELEMENTAL_COMBAT_CONTRACT.md](docs/ELEMENTAL_COMBAT_CONTRACT.md) for ability/reaction contracts.
-
 - **Core** — shared clock, seeded effects, and event contracts.
-- **Element Definitions** — data-driven element identity, color, status, damage/impulse scaling, and bounded chain budgets.
-- **Ability Executor** — validates ability requests and emits simulation result payloads, with per-caster cooldowns.
-- **Interaction Resolver** — deterministic element-pair rules, reaction modifiers, statuses, and chain caps.
-- **Combat/world adapter (future)** — authoritative collision, target validation, health, and physics changes; intentionally separate from ability resolution.
-- **Energy Renderer** — procedural lightning, arcs, plasma ribbons, beams, and shockwaves.
-- **Particle System** — bounded sparks, debris, and trails.
-- **Impact & Physics** — gameplay impulses kept separate from decorative motion.
-- **Performance Director** — Low / Balanced / High quality budgets and runtime telemetry.
-- **Engine Lab** — isolated demonstrations and controls.
+- **Element Definitions** — data-driven element identity, color, damage/impulse scaling, statuses, and chain budgets.
+- **Ability Executor** — validates abilities, resolves modifiers, and manages per-caster cooldowns.
+- **Interaction Resolver** — deterministic elemental pair reactions.
+- **Combatant & Status Controller** — health, defeat state, timed statuses, periodic burn damage, and impulse adaptation.
+- **Chain Reaction Manager** — nearest-first, range-limited, duplicate-safe target selection.
+- **Combat World Adapter** — applies simulation results to caller-supplied collision candidates.
+- **Energy Renderer & Particles** — procedural lightning and bounded energy/particle effects.
+- **Performance Director** — Low / Balanced / High visual budgets and runtime telemetry.
+- **Engine Lab** — isolated visual demonstrations and controls.
 
-## Requirements
-
-- Godot Engine 4.7.x
-- Git
+See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md), [docs/ELEMENTAL_COMBAT_CONTRACT.md](docs/ELEMENTAL_COMBAT_CONTRACT.md), and [docs/COMBAT_WORLD_INTEGRATION.md](docs/COMBAT_WORLD_INTEGRATION.md).
 
 ## Run
 
-Open this folder in Godot and press **F5**. The default scene is `scenes/engine_lab.tscn`. In the current visual lab, click/tap the canvas to trigger a procedural energy burst.
+Open this folder in Godot 4.7.x and press **F5**. The current default scene remains the visual Engine Lab; the combat modules are reusable systems and are not yet wired into a playable enemy arena.
 
-The elemental modules are reusable building blocks; the current lab scene does not yet wire them to real actors, collision, health, or game progression.
+Run the headless smoke test from a terminal with Godot installed:
 
-## Quality and renderer policy
+```bash
+godot --headless --path . --script res://tests/elemental_combat_smoke_test.gd
+```
 
-The project keeps GL Compatibility as a conservative boot target. Renderer/HDR/glow changes must be checked against the actual Godot 4.7.x installation and target Android devices before being committed as the default. Visual quality must never alter simulation damage or reaction rules.
+## Design guarantees
 
-## Development rules
-
-- Keep commits small and independently testable.
-- Keep ability simulation separate from renderer nodes and quality settings.
-- Keep effects and chain reactions bounded.
-- Do not report parser/runtime correctness or performance targets as verified until tested in Godot and measured on hardware.
+- Ability simulation is independent of renderer quality.
+- World adapter requires candidate targets from a collision/physics query; it does not scan the entire scene.
+- Chain candidates and target counts are bounded.
+- Visual effects are presentation only; they must not silently mutate health or physics.
+- Keep commits small and testable. Do not claim runtime correctness or performance until measured.
