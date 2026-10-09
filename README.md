@@ -24,7 +24,7 @@ See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md), [docs/ELEMENTAL_
 
 ## Run
 
-Open this folder in Godot 4.7.x and press **F5**. The current default scene remains the visual Engine Lab; the combat modules are reusable systems and are not yet wired into a playable enemy arena.
+Open this folder in Godot 4.7.x and press **F5**. The default scene remains the visual Engine Lab. For combat integration, open `scenes/elemental_combat_lab.tscn` and run the current scene (F6); see [docs/ELEMENTAL_COMBAT_LAB.md](docs/ELEMENTAL_COMBAT_LAB.md). The combat lab uses test targets and is not the finished game.
 
 Run the headless smoke test from a terminal with Godot installed:
 
