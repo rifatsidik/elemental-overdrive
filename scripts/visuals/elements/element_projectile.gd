@@ -12,6 +12,7 @@ var layer_budget: int = 2
 var _seed: int = 1
 var _rng := RandomNumberGenerator.new()
 var _droplet_offsets: Array[Vector2] = []
+signal arrived(element_id: StringName, target_position: Vector2, source_position: Vector2, strength: float, color: Color)
 
 func configure(new_element: StringName, destination_offset: Vector2, new_strength: float, new_seed: int, layers: int, color: Color) -> void:
 	element_id = new_element
@@ -25,7 +26,6 @@ func configure(new_element: StringName, destination_offset: Vector2, new_strengt
 	_droplet_offsets.clear()
 	for i in range(12 + layer_budget * 4):
 		_droplet_offsets.append(Vector2(_rng.randf_range(-1.0, 1.0), _rng.randf_range(-1.0, 1.0)))
-	rotation = travel_vector.angle()
 	queue_redraw()
 
 func _ready() -> void:
@@ -37,6 +37,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	age += delta
 	if age >= lifetime:
+		arrived.emit(element_id, position + travel_vector, position, strength, tint)
 		queue_free()
 		return
 	queue_redraw()
