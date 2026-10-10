@@ -21,7 +21,7 @@ func _ready() -> void:
     var camera := Camera2D.new()
     camera.position_smoothing_enabled = true
     camera.position_smoothing_speed = 5.0
-    camera.position = Vector2(0.0, -120.0)
+    camera.position = Vector2(192.0, -120.0)
     player.add_child(camera)
     queue_redraw()
 
