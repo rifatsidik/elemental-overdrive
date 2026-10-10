@@ -24,9 +24,13 @@ This repository builds the **engine lab and reusable engine systems**, not a fin
 
 See [docs/ENGINE_ARCHITECTURE.md](docs/ENGINE_ARCHITECTURE.md), [docs/ELEMENTAL_COMBAT_CONTRACT.md](docs/ELEMENTAL_COMBAT_CONTRACT.md), and [docs/COMBAT_WORLD_INTEGRATION.md](docs/COMBAT_WORLD_INTEGRATION.md).
 
-## Run
+## Current direction: Neon Platformer
 
-Open this folder in Godot 4.7.x and press **F5**. The default scene remains the visual Engine Lab. For combat integration, open `scenes/elemental_combat_lab.tscn` and run the current scene (F6); see [docs/ELEMENTAL_COMBAT_LAB.md](docs/ELEMENTAL_COMBAT_LAB.md). Press T/G/Y/U/I/O to preview special-skill VFX at the pointer. The combat lab uses test targets and is not the finished game.
+The default scene is now `scenes/neon_platformer_lab.tscn`, a side-view platformer test arena. The player is a procedural neon stickman drawn from lines, arcs, and circles in GDScript—no PNG sprite textures or sprite sheets. The first pass includes run-cycle motion, jump pose, dash trails, cyan/blue additive glow, collision, and hand-built test platforms.
+
+- Desktop: A/D or arrow keys to move, Space/W/Up to jump, Shift to dash.
+- Touch prototype: bottom-left zones for movement and bottom-right zones for jump/dash. Touch input is an early test implementation and needs device validation.
+- Press F5 to run the platformer lab. The earlier visual and elemental-combat labs remain available as separate scenes; the elemental combat lab is a sandbox, not the current game direction.
 
 Run the headless smoke test from a terminal with Godot installed:
 
