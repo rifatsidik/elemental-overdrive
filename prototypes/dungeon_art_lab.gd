@@ -227,7 +227,7 @@ func _draw_hp_bar(p: Vector2, hp: int, maximum: int) -> void:
 	draw_rect(Rect2(p, Vector2(26, 4)), Color("#151820"))
 	draw_rect(Rect2(p + Vector2(1, 1), Vector2(24.0 * float(hp) / float(maximum), 2)), Color("#d9575b"))
 
-func __draw_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
+func _draw_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
 	for i in range(12):
 		var angle := TAU * float(i) / 12.0
 		var next_angle := TAU * float(i + 1) / 12.0
