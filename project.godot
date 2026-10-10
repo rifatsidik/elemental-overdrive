@@ -3,8 +3,8 @@ config_version=5
 
 [application]
 
-config/name="OVERDRIVE ENGINE LAB"
-run/main_scene="res://scenes/engine_lab.tscn"
+config/name="OVERDRIVE // NEON PLATFORMER"
+run/main_scene="res://scenes/neon_platformer_lab.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]
