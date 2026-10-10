@@ -146,7 +146,7 @@ func _draw_enemy(enemy: Dictionary) -> void:
 	var p: Vector2 = enemy["pos"]
 	var bob := sin(time_passed * 4.0 + float(enemy["phase"])) * 2.0
 	var y := p.y + bob
-	draw_ellipse(p + Vector2(0, 14), Vector2(17, 6), Color(0, 0, 0, 0.42))
+	_draw_ellipse(p + Vector2(0, 14), Vector2(17, 6), Color(0, 0, 0, 0.42))
 	match int(enemy["kind"]):
 		0: # Skeleton
 			draw_rect(Rect2(p.x - 9, y - 13, 18, 21), Color("#665e5a"))
@@ -174,7 +174,7 @@ func _draw_enemy(enemy: Dictionary) -> void:
 func _draw_hero() -> void:
 	var p := hero
 	var bob := 0.0 if attack_timer > 0.0 else sin(time_passed * 9.0) * 1.5
-	draw_ellipse(p + Vector2(0, 15), Vector2(15, 5), Color(0, 0, 0, 0.5))
+	_draw_ellipse(p + Vector2(0, 15), Vector2(15, 5), Color(0, 0, 0, 0.5))
 	# Boots and legs
 	draw_rect(Rect2(p.x - 8, p.y + 3 + bob, 6, 10), Color("#3b3544"))
 	draw_rect(Rect2(p.x + 2, p.y + 3 - bob, 6, 10), Color("#3b3544"))
@@ -227,7 +227,7 @@ func _draw_hp_bar(p: Vector2, hp: int, maximum: int) -> void:
 	draw_rect(Rect2(p, Vector2(26, 4)), Color("#151820"))
 	draw_rect(Rect2(p + Vector2(1, 1), Vector2(24.0 * float(hp) / float(maximum), 2)), Color("#d9575b"))
 
-func _draw_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
+func __draw_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
 	for i in range(12):
 		var angle := TAU * float(i) / 12.0
 		var next_angle := TAU * float(i + 1) / 12.0
