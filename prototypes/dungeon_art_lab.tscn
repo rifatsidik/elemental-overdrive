@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://prototypes/dungeon_art_lab.gd" id="1_art_lab"]
+
+[node name="DungeonArtLab" type="Node2D"]
+script = ExtResource("1_art_lab")
+scale = Vector2(1.6666666, 1.6666666)
