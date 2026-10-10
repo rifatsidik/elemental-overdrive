@@ -104,8 +104,10 @@ func _on_player_landed(_strength: float) -> void:
 func _draw() -> void:
     var view_size: Vector2 = get_viewport_rect().size
     var camera_x: float = 0.0
+    var camera_y: float = 0.0
     if is_instance_valid(player):
         camera_x = player.global_position.x - view_size.x * 0.38
+        camera_y = player.global_position.y - (view_size.y * 0.5 + 120.0)
     draw_rect(Rect2(Vector2.ZERO, view_size), Color("#040611"))
     for i in range(22):
         var x: float = fposmod(float(i) * 80.0 - fposmod(camera_x, 80.0), view_size.x)
@@ -116,7 +118,7 @@ func _draw() -> void:
     for child in get_children():
         if child is StaticBody2D and child.has_meta("platform_rect"):
             var rect: Rect2 = child.get_meta("platform_rect")
-            var screen_rect := Rect2(rect.position - Vector2(camera_x, 0.0), rect.size)
+            var screen_rect := Rect2(rect.position - Vector2(camera_x, camera_y), rect.size)
             draw_rect(screen_rect, Color(0.025, 0.055, 0.12, 0.95))
             draw_line(screen_rect.position, screen_rect.position + Vector2(screen_rect.size.x, 0.0), Color(0.08, 0.72, 1.0, 0.7), 3.0, true)
             draw_line(screen_rect.position + Vector2(0.0, 4.0), screen_rect.position + Vector2(screen_rect.size.x, 4.0), Color(0.05, 0.35, 0.9, 0.24), 1.0, true)
