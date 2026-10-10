@@ -225,8 +225,10 @@ func _update_particles(delta: float) -> void:
 	for i in range(particles.size() - 1, -1, -1):
 		var p: Dictionary = particles[i]
 		p["life"] = float(p["life"]) - delta
-		p["pos"] = Vector2(p["pos"]) + Vector2(p["vel"]) * delta
-		p["vel"] = Vector2(p["vel"]) * 0.92
+		var particle_pos: Vector2 = p["pos"]
+		var particle_vel: Vector2 = p["vel"]
+		p["pos"] = particle_pos + particle_vel * delta
+		p["vel"] = particle_vel * 0.92
 		if float(p["life"]) <= 0.0:
 			particles.remove_at(i)
 		else:
