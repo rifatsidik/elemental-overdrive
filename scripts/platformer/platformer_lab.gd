@@ -3,7 +3,7 @@ class_name NeonPlatformerLab
 
 const PLAYER_SCRIPT = preload("res://scripts/platformer/neon_stickman.gd")
 
-var player: NeonStickman
+var player: CharacterBody2D
 var world_time: float = 0.0
 var touch_left: bool = false
 var touch_right: bool = false
@@ -13,11 +13,11 @@ var touch_dash: bool = false
 func _ready() -> void:
     _setup_input()
     _build_level()
-    player = PLAYER_SCRIPT.new()
+    player = PLAYER_SCRIPT.new() as CharacterBody2D
     player.name = "NeonStickman"
     player.position = Vector2(210.0, 690.0)
     add_child(player)
-    player.landed_impact.connect(_on_player_landed)
+    player.connect("landed_impact", Callable(self, "_on_player_landed"))
     var camera := Camera2D.new()
     camera.position_smoothing_enabled = true
     camera.position_smoothing_speed = 5.0
@@ -72,7 +72,7 @@ func _add_platform(rect: Rect2) -> void:
 
 func _process(_delta: float) -> void:
     if is_instance_valid(player):
-        player.touch_horizontal = -1.0 if touch_left else 1.0 if touch_right else 0.0
+        player.set("touch_horizontal", -1.0 if touch_left else 1.0 if touch_right else 0.0)
     queue_redraw()
 
 func _input(event: InputEvent) -> void:
@@ -87,11 +87,11 @@ func _input(event: InputEvent) -> void:
                 elif pos.x < get_viewport_rect().size.x * 0.76:
                     touch_jump = true
                     if is_instance_valid(player):
-                        player.jump_from_touch()
+                        player.call("jump_from_touch")
                 else:
                     touch_dash = true
                     if is_instance_valid(player):
-                        player.dash_from_touch()
+                        player.call("dash_from_touch")
         else:
             touch_left = false
             touch_right = false
